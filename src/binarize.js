@@ -348,7 +348,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
     pack: function(obj) {
       var result = null;
       try {
-        result = serialize(obj);
+        result = pack(serialize(obj));
       } catch(e) {
         throw e;
       }
