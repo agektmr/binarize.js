@@ -29,6 +29,7 @@ Null header will have no payload.
 
 # Undefined
 Undefined header will have no payload.  
+  
      type     byte_length  
     +--------+----------------+  
     |0x1     |0x00            |  
@@ -36,6 +37,7 @@ Undefined header will have no payload.
 
 # Strings
 Strings header will be followed by sequence of characters.  
+  
     ex) hello  
      type     byte_length      payload  
     +--------+----------------+----------------+----------------+  
@@ -46,6 +48,7 @@ Strings header will be followed by sequence of characters.
 
 # Number
 Number header will be followed by number in Float64Array.  
+  
     ex) Number.MAX_VALUE  
      type     byte_length      payload  
     +--------+----------------+--------------------------------+  
@@ -54,6 +57,7 @@ Number header will be followed by number in Float64Array.
 
 # Boolean
 Boolean header will followed by     0x1 when     true,     0x0 when     false.  
+  
     ex) true  
      type     byte_length      payload  
     +--------+----------------+--------+  
@@ -62,6 +66,7 @@ Boolean header will followed by     0x1 when     true,     0x0 when     false.
 
 # Array
 Array header will be followed by sequence of elements.  
+  
      type     length           byte_length  
     +--------+----------------+----------------+  
     |0x5     |0x03            |0x21            |  
@@ -75,6 +80,7 @@ Array header will be followed by sequence of elements.
 
 # Object
 Object header will be followed by sequence of key in Strings type and value in various type combinations.  
+  
     ex) {‘name’: ‘Eiji Kitamura’, ‘hello’: ‘こんにちは’}  
      type     length           byte_length  
     +--------+----------------+----------------+  
@@ -88,6 +94,8 @@ Object header will be followed by sequence of key in Strings type and value in v
     +----------------+----------------+----------------+--------+  
 
 # Int8Array
+Int8Array header will be followed by sequence of 8bit interger values.  
+  
     ex) 1  
      type     byte_length      payload  
     +--------+----------------+--------+  
@@ -95,6 +103,8 @@ Object header will be followed by sequence of key in Strings type and value in v
     +--------+----------------+--------+  
 
 # Int16Array
+Int16Array header will be followed by sequence of 16bit interger values.  
+  
     ex) 16  
      type     byte_length      payload  
     +--------+----------------+----------------+  
@@ -102,6 +112,8 @@ Object header will be followed by sequence of key in Strings type and value in v
     +--------+----------------+----------------+  
 
 # Int32Array
+Int32Array header will be followed by sequence of 32bit interger values.  
+  
     ex) 32  
      type     byte_length      payload  
     +--------+----------------+--------------------------------+  
@@ -109,6 +121,8 @@ Object header will be followed by sequence of key in Strings type and value in v
     +--------+----------------+--------------------------------+  
 
 # Uint8Array
+Uint8Array header will be followed by sequence of 8bit unsigned int values.  
+  
     ex) 16  
      type     byte_length      payload  
     +--------+----------------+--------+  
@@ -116,6 +130,8 @@ Object header will be followed by sequence of key in Strings type and value in v
     +--------+----------------+--------+  
 
 # Uint16Array
+Uint16Array header will be followed by sequence of 16bit unsigned int values.  
+  
     ex) 16  
      type     byte_length      payload  
     +--------+----------------+----------------+  
@@ -123,6 +139,8 @@ Object header will be followed by sequence of key in Strings type and value in v
     +--------+----------------+----------------+  
 
 # Uint32Array
+Uint32Array header will be followed by sequence of 32bit unsigned int values.  
+  
     ex) 32  
      type     byte_length      payload  
     +--------+----------------+--------------------------------+  
@@ -130,6 +148,8 @@ Object header will be followed by sequence of key in Strings type and value in v
     +--------+----------------+--------------------------------+  
 
 # Float32Array
+Float32Array header will be followed by sequence of 32bit floating point values.  
+  
     ex) 32  
      type     byte_length      payload  
     +--------+----------------+--------------------------------+  
@@ -137,6 +157,8 @@ Object header will be followed by sequence of key in Strings type and value in v
     +--------+----------------+--------------------------------+  
 
 # Float64Array
+Float64Array header will be followed by sequence of 64bit floating point values.  
+  
     ex) 64  
      type     byte_length      payload  
     +--------+----------------+--------------------------------+  
