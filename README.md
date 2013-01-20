@@ -1,7 +1,7 @@
 # what is binarize.js?
-binarize.js is a JavaScript library that converts any variable, array or object into binary format. This library is useful when you want to send and receive complex objects which include TypedArray over WebSocket, XHR2, etc.  
+binarize.js is a JavaScript library that converts any variable, array or object into binary format. This library is useful when you want to send and receive complex objects (especially when they include TypedArray) in ArrayBuffer format over WebSocket, XHR2, etc.  
 
-# Usage
+## Usage
     var object = {  
       name: 'Eiji Kitamura',  
       array: [1, 2, 3],  
@@ -17,7 +17,7 @@ binarize.js is a JavaScript library that converts any variable, array or object 
     // retrieve original object from ArrayBuffer  
     var original = binarize.unpack(buffer);  
 
-# Types
+## Supported Types
     NULL:          0,  
     UNDEFINED:     1,  
     STRING:        2,  
@@ -35,7 +35,9 @@ binarize.js is a JavaScript library that converts any variable, array or object 
     FLOAT64ARRAY:  14  
   
 
-# Null
+# Formats
+
+## Null
 Null header will have no payload.  
   
      type     byte_length  
@@ -43,7 +45,7 @@ Null header will have no payload.
     |0x0     |0x00            |  
     +--------+----------------+  
 
-# Undefined
+## Undefined
 Undefined header will have no payload.  
   
      type     byte_length  
@@ -51,7 +53,7 @@ Undefined header will have no payload.
     |0x1     |0x00            |  
     +--------+----------------+  
 
-# Strings
+## Strings
 Strings header will be followed by sequence of characters.  
   
     ex) hello  
@@ -62,7 +64,7 @@ Strings header will be followed by sequence of characters.
     |0x6c (l)        |0x6c (l)        |0x6f (o)        |  
     +----------------+----------------+----------------+  
 
-# Number
+## Number
 Number header will be followed by number in Float64Array.  
   
     ex) Number.MAX_VALUE  
@@ -71,7 +73,7 @@ Number header will be followed by number in Float64Array.
     |0x3     |0x0e            |0x7fefffffffffffff              |  
     +--------+----------------+--------------------------------+  
 
-# Boolean
+## Boolean
 Boolean header will followed by     0x1 when     true,     0x0 when     false.  
   
     ex) true  
@@ -80,7 +82,7 @@ Boolean header will followed by     0x1 when     true,     0x0 when     false.
     |0x4     |0x01            |0x1     |  
     +--------+----------------+--------+  
 
-# Array
+## Array
 Array header will be followed by sequence of elements.  
   
      type     length           byte_length  
@@ -94,7 +96,7 @@ Array header will be followed by sequence of elements.
     |0x3     |0x0e            +0x0000000000000003              |  
     +--------+----------------+--------------------------------+  
 
-# Object
+## Object
 Object header will be followed by sequence of key in Strings type and value in various type combinations.  
   
     ex) {‘name’: ‘Eiji Kitamura’, ‘hello’: ‘こんにちは’}  
@@ -109,7 +111,7 @@ Object header will be followed by sequence of key in Strings type and value in v
     |0x0045 (E)      |0x0069 (i)      |0x006a (j)      |...  
     +----------------+----------------+----------------+--------+  
 
-# Int8Array
+## Int8Array
 Int8Array header will be followed by sequence of 8bit interger values.  
   
     ex) 1  
@@ -118,7 +120,7 @@ Int8Array header will be followed by sequence of 8bit interger values.
     |0x07    |0x01            |0x1     |  
     +--------+----------------+--------+  
 
-# Int16Array
+## Int16Array
 Int16Array header will be followed by sequence of 16bit interger values.  
   
     ex) 16  
@@ -127,7 +129,7 @@ Int16Array header will be followed by sequence of 16bit interger values.
     |0x08    |0x02            |0x10            |  
     +--------+----------------+----------------+  
 
-# Int32Array
+## Int32Array
 Int32Array header will be followed by sequence of 32bit interger values.  
   
     ex) 32  
@@ -136,7 +138,7 @@ Int32Array header will be followed by sequence of 32bit interger values.
     |0x09    |0x04            |0x0020                          |  
     +--------+----------------+--------------------------------+  
 
-# Uint8Array
+## Uint8Array
 Uint8Array header will be followed by sequence of 8bit unsigned int values.  
   
     ex) 16  
@@ -145,7 +147,7 @@ Uint8Array header will be followed by sequence of 8bit unsigned int values.
     |0x10    |0x01            |0x10    |  
     +--------+----------------+--------+  
 
-# Uint16Array
+## Uint16Array
 Uint16Array header will be followed by sequence of 16bit unsigned int values.  
   
     ex) 16  
@@ -154,7 +156,7 @@ Uint16Array header will be followed by sequence of 16bit unsigned int values.
     |0x11    |0x02            |0x10            |  
     +--------+----------------+----------------+  
 
-# Uint32Array
+## Uint32Array
 Uint32Array header will be followed by sequence of 32bit unsigned int values.  
   
     ex) 32  
@@ -163,7 +165,7 @@ Uint32Array header will be followed by sequence of 32bit unsigned int values.
     |0x12    |0x04            |0x0020                          |  
     +--------+----------------+--------------------------------+  
 
-# Float32Array
+## Float32Array
 Float32Array header will be followed by sequence of 32bit floating point values.  
   
     ex) 32  
@@ -172,7 +174,7 @@ Float32Array header will be followed by sequence of 32bit floating point values.
     |0x13    |0x04            |0x0020                          |  
     +--------+----------------+--------------------------------+  
 
-# Float64Array
+## Float64Array
 Float64Array header will be followed by sequence of 64bit floating point values.  
   
     ex) 64  
