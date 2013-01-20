@@ -1,5 +1,21 @@
 # what is binarize.js?
-binarize.js is a library that converts any JavaScript variable, array or objects into binary format. Everything is binarized in big endian. The binary format is as follows.  
+binarize.js is a JavaScript library that converts any variable, array or object into binary format. This library is useful when you want to send and receive complex objects which include TypedArray over WebSocket, XHR2, etc.  
+
+# Usage
+    var object = {  
+      name: 'Eiji Kitamura',  
+      array: [1, 2, 3],  
+      object: {  
+        name: 'Eiji Kitamura',  
+        hello: 'こんにちは',  
+        typed: typed  
+    };  
+  
+    // convert a JavaScript object into ArrayBuffer  
+    var buffer = binarize.pack(object);  
+  
+    // retrieve original object from ArrayBuffer  
+    var original = binarize.unpack(buffer);  
 
 # Types
     NULL:          0,  
