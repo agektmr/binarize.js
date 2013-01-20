@@ -54,7 +54,7 @@ Undefined header will have no payload.
     +--------+----------------+  
 
 ## Strings
-Strings header will be followed by sequence of characters.  
+Strings header will be followed by sequence of characters in Uint16Array.  
   
     ex) hello  
      type     byte_length      payload  
@@ -83,7 +83,7 @@ Boolean header will followed by     0x1 when     true,     0x0 when     false.
     +--------+----------------+--------+  
 
 ## Array
-Array header will be followed by sequence of elements.  
+Array header will be followed by sequence of array elements.  
   
      type     length           byte_length  
     +--------+----------------+----------------+  
@@ -97,7 +97,7 @@ Array header will be followed by sequence of elements.
     +--------+----------------+--------------------------------+  
 
 ## Object
-Object header will be followed by sequence of key in Strings type and value in various type combinations.  
+Object header will be followed by sequence of combinations of key in Strings type and value in arbitrary type.  
   
     ex) {‘name’: ‘Eiji Kitamura’, ‘hello’: ‘こんにちは’}  
      type     length           byte_length  
