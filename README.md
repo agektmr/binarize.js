@@ -2,9 +2,9 @@
 binarize.js is a JavaScript library that converts any variable, array or object into binary format. This library is useful when you want to send and receive complex objects (especially when they include TypedArray) in ArrayBuffer format over WebSocket, XHR2, etc.  
 
 ## Why not Protocol Buffers nor MessagePack?
-Protocol Buffers and MessagePack are not widely used, nor widely adopted in terms of implementation. I consider binarize.js to be a temporary solution and recommend you use [Protocol Buffers](https://code.google.com/p/protobuf/) or [MessagePack](http://msgpack.org/) instead. The reasons I made this are:
+Since [Protocol Buffers](https://code.google.com/p/protobuf/) or [MessagePack](http://msgpack.org/) are widely used and have wider adoption in terms of implementation, I consider binarize.js to be a temporary solution and recommend you to use them in stead. The reasons I made this are  
 
-* Current JS implementations of Protocol Buffers and MessagePack don’t support TypedArray.
+* Current JS implementation of Protocol Buffers and MessagePack don’t support TypedArray.
 * I don’t have time to learn their spec.
 
 So, it would be appreciated if someone could provide TypedArray support on those protocols :)  
@@ -52,7 +52,7 @@ Null header will have no payload.
   
      type     byte_length  
     +--------+----------------+  
-    |0x0     |0x00            |  
+    |0x00    |0x0000          |  
     +--------+----------------+  
 
 ## Undefined
@@ -60,7 +60,7 @@ Undefined header will have no payload.
   
      type     byte_length  
     +--------+----------------+  
-    |0x1     |0x00            |  
+    |0x01    |0x0000          |  
     +--------+----------------+  
 
 ## Strings
@@ -69,9 +69,9 @@ Strings header will be followed by sequence of characters in Uint16Array.
     ex) hello  
      type     byte_length      payload  
     +--------+----------------+----------------+----------------+  
-    |0x2     |0x0a            |0x68 (h)        |0x65 (e)        |  
+    |0x02    |0x000a          |0x0068 (h)      |0x0065 (e)      |  
     +--------+-------+--------+-------+--------+-------+--------+  
-    |0x6c (l)        |0x6c (l)        |0x6f (o)        |  
+    |0x006c (l)      |0x006c (l)      |0x006f (o)      |  
     +----------------+----------------+----------------+  
 
 ## Number
@@ -80,8 +80,10 @@ Number header will be followed by number in Float64Array.
     ex) Number.MAX_VALUE  
      type     byte_length      payload  
     +--------+----------------+--------------------------------+  
-    |0x3     |0x0e            |0x7fefffffffffffff              |  
-    +--------+----------------+--------------------------------+  
+    |0x03    |0x000e          |0x7fefffffffffffff              :  
+    +--------+----------------+------+-------------------------+  
+    :                                |  
+    +--------------------------------+  
 
 ## Boolean
 Boolean header will followed by     0x1 when     true,     0x0 when     false.  
@@ -89,22 +91,29 @@ Boolean header will followed by     0x1 when     true,     0x0 when     false.
     ex) true  
      type     byte_length      payload  
     +--------+----------------+--------+  
-    |0x4     |0x01            |0x1     |  
+    |0x04    |0x0001          |0x01    |  
     +--------+----------------+--------+  
 
 ## Array
 Array header will be followed by sequence of array elements.  
   
+    ex) [1, 2, 3]  
      type     length           byte_length  
     +--------+----------------+----------------+  
-    |0x5     |0x03            |0x21            |  
+    |0x05    |0x0003          |0x21            |  
     +--------+----------------+--------------------------------+  
-    |0x3     |0x0e            +0x0000000000000001              |  
-    +--------+----------------+--------------------------------+  
-    |0x3     |0x0e            +0x0000000000000002              |  
-    +--------+----------------+--------------------------------+  
-    |0x3     |0x0e            +0x0000000000000003              |  
-    +--------+----------------+--------------------------------+  
+    |0x03    |0x000e          |0x0000000000000001              :  
+    +--------+----------------+------+-------------------------+  
+    :                                |  
+    +--------+----------------+------+-------------------------+  
+    |0x03    |0x000e          |0x0000000000000002              :  
+    +--------+----------------+------+-------------------------+  
+    :                                |  
+    +--------+----------------+------+-------------------------+  
+    |0x03    |0x000e          |0x0000000000000003              :  
+    +--------+----------------+------+-------------------------+  
+    :                                |  
+    +--------------------------------+  
 
 ## Object
 Object header will be followed by sequence of combinations of key in Strings type and value in arbitrary type.  
@@ -112,11 +121,11 @@ Object header will be followed by sequence of combinations of key in Strings typ
     ex) {‘name’: ‘Eiji Kitamura’, ‘hello’: ‘こんにちは’}  
      type     length           byte_length  
     +--------+----------------+----------------+  
-    |0x6     |0x02            |0x42            |  
+    |0x06    |0x0002          |0x0042          |  
     +--------+----------------+----------------+----------------+  
-    |0x2     |0x10            +0x006e (n)      |0x0061 (a)      |  
+    |0x02    |0x0010          +0x006e (n)      |0x0061 (a)      |  
     +--------+-------+--------+-------+--------+----------------+  
-    |0x006d (m)      |0x0065 (e)      |0x2     |0x1a            |  
+    |0x006d (m)      |0x0065 (e)      |0x02    |0x001a          |  
     +--------+-------+--------+-------+--------+----------------+  
     |0x0045 (E)      |0x0069 (i)      |0x006a (j)      |...  
     +----------------+----------------+----------------+--------+  
@@ -127,7 +136,7 @@ Int8Array header will be followed by sequence of 8bit interger values.
     ex) 1  
      type     byte_length      payload  
     +--------+----------------+--------+  
-    |0x07    |0x01            |0x1     |  
+    |0x07    |0x0001          |0x01    |  
     +--------+----------------+--------+  
 
 ## Int16Array
@@ -136,7 +145,7 @@ Int16Array header will be followed by sequence of 16bit interger values.
     ex) 16  
      type     byte_length      payload  
     +--------+----------------+----------------+  
-    |0x08    |0x02            |0x10            |  
+    |0x08    |0x0002          |0x0010          |  
     +--------+----------------+----------------+  
 
 ## Int32Array
@@ -145,7 +154,7 @@ Int32Array header will be followed by sequence of 32bit interger values.
     ex) 32  
      type     byte_length      payload  
     +--------+----------------+--------------------------------+  
-    |0x09    |0x04            |0x0020                          |  
+    |0x09    |0x0004          |0x00000020                      |  
     +--------+----------------+--------------------------------+  
 
 ## Uint8Array
@@ -154,7 +163,7 @@ Uint8Array header will be followed by sequence of 8bit unsigned int values.
     ex) 16  
      type     byte_length      payload  
     +--------+----------------+--------+  
-    |0x10    |0x01            |0x10    |  
+    |0x0a    |0x0001          |0x10    |  
     +--------+----------------+--------+  
 
 ## Uint16Array
@@ -163,7 +172,7 @@ Uint16Array header will be followed by sequence of 16bit unsigned int values.
     ex) 16  
      type     byte_length      payload  
     +--------+----------------+----------------+  
-    |0x11    |0x02            |0x10            |  
+    |0x0b    |0x0002          |0x0010          |  
     +--------+----------------+----------------+  
 
 ## Uint32Array
@@ -172,7 +181,7 @@ Uint32Array header will be followed by sequence of 32bit unsigned int values.
     ex) 32  
      type     byte_length      payload  
     +--------+----------------+--------------------------------+  
-    |0x12    |0x04            |0x0020                          |  
+    |0x0c    |0x0004          |0x00000020                      |  
     +--------+----------------+--------------------------------+  
 
 ## Float32Array
@@ -181,7 +190,7 @@ Float32Array header will be followed by sequence of 32bit floating point values.
     ex) 32  
      type     byte_length      payload  
     +--------+----------------+--------------------------------+  
-    |0x13    |0x04            |0x0020                          |  
+    |0x0d    |0x0004          |0x00000020                      |  
     +--------+----------------+--------------------------------+  
 
 ## Float64Array
@@ -190,7 +199,7 @@ Float64Array header will be followed by sequence of 64bit floating point values.
     ex) 64  
      type     byte_length      payload  
     +--------+----------------+--------------------------------+  
-    |0x14    |0x08            |0x0000000000000040              :  
+    |0x0e    |0x0008          |0x0000000000000040              :  
     +--------+----------------+------+-------------------------+  
     :                                |  
     +--------------------------------+  
