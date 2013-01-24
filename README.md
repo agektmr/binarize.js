@@ -2,14 +2,14 @@
 binarize.js is a JavaScript library that converts any variable, array or object into binary format. This library is useful when you want to send and receive complex objects (especially when they include TypedArray) in ArrayBuffer format over WebSocket, XHR2, etc.  
 
 ## Why not Protocol Buffers nor MessagePack?
-As they are widely used and have wider adoption in terms of implementation, I consider binarize.js is just a temporary solution and recommend to use [Protocol Buffers](https://code.google.com/p/protobuf/) or [MessagePack](http://msgpack.org/) in stead. The reasons I did this are  
+Protocol Buffers and MessagePack are not widely used, nor widely adopted in terms of implementation. I consider binarize.js to be a temporary solution and recommend you use [Protocol Buffers](https://code.google.com/p/protobuf/) or [MessagePack](http://msgpack.org/) instead. The reasons I made this are:
 
-* Any of current JS implementation of Protocol Buffers and MessagePack don’t support TypedArray.
+* Current JS implementations of Protocol Buffers and MessagePack don’t support TypedArray.
 * I don’t have time to learn their spec.
 
 So, it would be appreciated if someone could provide TypedArray support on those protocols :)  
 
-# How to use binarize.js?
+# How do you use binarize.js?
     var typed = new Float64Array([1, Number.MAX_VALUE, Number.MIN_VALUE]);  
     var object = {  
       name: 'Eiji Kitamura',  
