@@ -16,7 +16,7 @@ limitations under the License.
 Author: Eiji Kitamura (agektmr@gmail.com)
 */
 (function(global) {
-  var debug = true;
+  var debug = false;
 
   var BIG_ENDIAN    = false,
       LITTLE_ENDIAN = true,
@@ -61,9 +61,9 @@ Author: Eiji Kitamura (agektmr@gmail.com)
   ];
 
   /**
-   * packs binary data into an object with type, byte length info and Uint8Array with those info
-   * @param  array  serialized        [description]
-   * @return ArrayBuffer object: {type in number, byte_length in number, binary in Uint8Array}
+   * packs seriarized elements array into a packed ArrayBuffer
+   * @param  {Array} serialized Serialized array of elements.
+   * @return {ArrayBuffer} packed binary data
    */
   var pack = function(serialized) {
     var cursor = 0, i = 0, j = 0, endianness = BIG_ENDIAN;
@@ -137,10 +137,10 @@ Author: Eiji Kitamura (agektmr@gmail.com)
   };
 
   /**
-   * Unpack binary data into an object with type, byte length info and raw TypedArray
-   * @param  DataView view    [description]
-   * @param  number   cursor  [description]
-   * @return {[type]}
+   * Unpack binary data into an object with value and cursor
+   * @param  {DataView} view [description]
+   * @param  {Number} cursor [description]
+   * @return {Object}
    */
   var unpack = function(view, cursor) {
     var i = 0, endianness = BIG_ENDIAN;
@@ -236,63 +236,62 @@ Author: Eiji Kitamura (agektmr@gmail.com)
 
   /**
    * Serializes object and return byte_length
-   * @param  mixed    obj        JavaScript object you want to serialize
-   * @return Array               Serialized array object
+   * @param  {mixed} obj JavaScript object you want to serialize
+   * @return {Array} Serialized array object
    */
   var serialize = function(obj) {
-    var type = obj && obj.constructor.name.toUpperCase();
-    var header_size = TYPE_LENGTH + BYTES_LENGTH,
-        byte_length = 0, subarray = [], length = 0, value = obj;
+    var type_name = obj && obj.constructor.name.toUpperCase(),
+        subarray = [], unit = 1,
+        header_size = TYPE_LENGTH + BYTES_LENGTH,
+        type, byte_length = 0, length = 0, value = obj;
 
-    if (!obj.constructor) {
+    if (!type_name) {
       if (typeof obj === 'undefined') {
         type = Types.UNDEFINED;
       } else {
         type = Types.NULL;
       }
-      length = 1;
 
     } else {
       // Retrieve type number
-      type = Types[obj.constructor.name.toUpperCase()];
-      unit_length = Length[type] === null ? 0 : global[Length[type]+'Array'].BYTES_PER_ELEMENT;
+      type = Types[type_name];
+      unit = Length[type] === null ? 0 : global[Length[type]+'Array'].BYTES_PER_ELEMENT;
 
-      switch(obj.constructor.name) {
-        case 'Number':
-        case 'Boolean':
-          byte_length += unit_length;
-          length = 1;
+      switch(type) {
+        case Types.NUMBER:
+        case Types.BOOLEAN:
+          byte_length += unit;
           break;
 
-        case 'String':
-          byte_length += obj.length * unit_length;
+        case Types.STRING:
+          byte_length += obj.length * unit;
           length = obj.length;
           break;
 
-        case 'Int8Array':
-        case 'Int16Array':
-        case 'Int32Array':
-        case 'Uint8Array':
-        case 'Uint16Array':
-        case 'Uint32Array':
-        case 'Float32Array':
-        case 'Float64Array':
-          byte_length += obj.length * unit_length;
+        case Types.INT8ARRAY:
+        case Types.INT16ARRAY:
+        case Types.INT32ARRAY:
+        case Types.UINT8ARRAY:
+        case Types.UINT16ARRAY:
+        case Types.UINT32ARRAY:
+        case Types.FLOAT32ARRAY:
+        case Types.FLOAT64ARRAY:
+          byte_length += obj.length * unit;
           length = obj.length;
           break;
 
-        case 'Array':
+        case Types.ARRAY:
           for (var i = 0; i < obj.length; i++, length++) {
             var elem = serialize(obj[i]);
             subarray.push(elem[0]);
-            byte_length += header_size + elem[0].byte_length;
+            byte_length += elem[0].header_size + elem[0].byte_length;
           }
           length = obj.length;
           header_size += LENGTH_LENGTH;
           value = null;
           break;
 
-        case 'Object':
+        case Types.OBJECT:
           for (var key in obj) {
             var map_byte_length = 0;
             var key_obj = serialize(key);

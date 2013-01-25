@@ -50,21 +50,21 @@ describe("ObjectSerializer", function() {
           },
               {
                 type: Test.Types.NUMBER, // 11
-                length: 1,
+                length: 0,
                 header_size: 3,
                 byte_length: 8,
                 value: 1
               },
               {
                 type: Test.Types.NUMBER, // 11
-                length: 1,
+                length: 0,
                 header_size: 3,
                 byte_length: 8,
                 value: 2
               },
               {
                 type: Test.Types.NUMBER, // 11
-                length: 1,
+                length: 0,
                 header_size: 3,
                 byte_length: 8,
                 value: 3
