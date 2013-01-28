@@ -39,7 +39,9 @@ Author: Eiji Kitamura (agektmr@gmail.com)
     UINT16ARRAY:   11,
     UINT32ARRAY:   12,
     FLOAT32ARRAY:  13,
-    FLOAT64ARRAY:  14
+    FLOAT64ARRAY:  14,
+    ARRAYBUFFER:   15,
+    BLOB:          16
   };
 
   var Length = [
@@ -57,7 +59,9 @@ Author: Eiji Kitamura (agektmr@gmail.com)
     'Uint16',         // Types.UINT16ARRAY
     'Uint32',         // Types.UINT32ARRAY
     'Float32',        // Types.FLOAT32ARRAY
-    'Float64'         // Types.FLOAT64ARRAY
+    'Float64',        // Types.FLOAT64ARRAY
+    'Uint8',          // Types.ARRAYBUFFER
+    null              // Types.BLOB
   ];
 
   /**
@@ -119,6 +123,8 @@ Author: Eiji Kitamura (agektmr@gmail.com)
         case Types.UINT32ARRAY:
         case Types.FLOAT32ARRAY:
         case Types.FLOAT64ARRAY:
+        case Types.ARRAYBUFFER:
+        case Types.BLOB:
           for (j = 0; j < length; j++, cursor += unit) {
             view['set'+type_name](cursor, value[j], endianness);
           }
@@ -182,8 +188,12 @@ Author: Eiji Kitamura (agektmr@gmail.com)
         break;
 
       case Types.NUMBER:
-      case Types.BOOLEAN:
         value = view['get'+type_name](cursor, endianness);
+        cursor += unit;
+        break;
+
+      case Types.BOOLEAN:
+        value = view['get'+type_name](cursor, endianness) === 1 ? true : false;
         cursor += unit;
         break;
 
@@ -195,12 +205,27 @@ Author: Eiji Kitamura (agektmr@gmail.com)
       case Types.UINT32ARRAY:
       case Types.FLOAT32ARRAY:
       case Types.FLOAT64ARRAY:
+      case Types.ARRAYBUFFER:
+      case Types.BLOB:
         elem = [];
         length = byte_length / unit;
         for (i = 0; i < length; i++, cursor += unit) {
           elem.push(view['get'+type_name](cursor, endianness));
         }
-        value = new global[type_name+'Array'](elem);
+
+        // If ArrayBuffer
+        if (type === Types.ARRAYBUFFER) {
+          value = (new global[type_name+'Array'](elem)).buffer;
+
+        // If Blob
+        } else if (type === Types.BLOB) {
+          value = new Blob(new global[type_name+'Array'](elem), {type: 'text/plain'});
+
+        // If other TypedArray
+        } else {
+          value = new global[type_name+'Array'](elem);
+
+        }
         break;
 
       case Types.ARRAY:
@@ -235,37 +260,64 @@ Author: Eiji Kitamura (agektmr@gmail.com)
   };
 
   /**
+   * deferred function to process multiple serialization in order
+   * @param  {array}   array    [description]
+   * @param  {Function} callback [description]
+   * @return {void} no return value
+   */
+  var deferredSerialize = function(array, callback) {
+    var length = array.length, results = [], count = 0, byte_length = 0;
+    for (var i = 0; i < array.length; i++) {
+      (function(index) {
+        serialize(array[index], function(result) {
+          // store results in order
+          results[index] = result;
+          // count byte length
+          byte_length += result[0].header_size + result[0].byte_length;
+          // when all results are on table
+          if (++count === length) {
+            // finally concatenate all reuslts into a single array in order
+            var array = [];
+            for (var j = 0; j < results.length; j++) {
+              array = array.concat(results[j]);
+            }
+            callback(array, byte_length);
+          }
+        });
+      })(i);
+    }
+  };
+
+  /**
    * Serializes object and return byte_length
    * @param  {mixed} obj JavaScript object you want to serialize
    * @return {Array} Serialized array object
    */
-  var serialize = function(obj) {
-    var type_name = obj && obj.constructor.name.toUpperCase(),
-        subarray = [], unit = 1,
+  var serialize = function(obj, callback) {
+    var subarray = [], unit = 1,
         header_size = TYPE_LENGTH + BYTES_LENGTH,
         type, byte_length = 0, length = 0, value = obj;
 
-    if (!type_name) {
-      if (typeof obj === 'undefined') {
-        type = Types.UNDEFINED;
-      } else {
-        type = Types.NULL;
-      }
+    if (obj === undefined) {
+      type = Types.UNDEFINED;
+
+    } else if (obj === null) {
+      type = Types.NULL;
 
     } else {
       // Retrieve type number
-      type = Types[type_name];
+      type = Types[obj.constructor.name.toUpperCase()];
       unit = Length[type] === null ? 0 : global[Length[type]+'Array'].BYTES_PER_ELEMENT;
 
       switch(type) {
         case Types.NUMBER:
         case Types.BOOLEAN:
-          byte_length += unit;
+          byte_length = unit;
           break;
 
         case Types.STRING:
-          byte_length += obj.length * unit;
           length = obj.length;
+          byte_length += length * unit;
           break;
 
         case Types.INT8ARRAY:
@@ -276,50 +328,76 @@ Author: Eiji Kitamura (agektmr@gmail.com)
         case Types.UINT32ARRAY:
         case Types.FLOAT32ARRAY:
         case Types.FLOAT64ARRAY:
-          byte_length += obj.length * unit;
           length = obj.length;
+          byte_length += length * unit;
           break;
 
         case Types.ARRAY:
-          for (var i = 0; i < obj.length; i++, length++) {
-            var elem = serialize(obj[i]);
-            subarray.push(elem[0]);
-            byte_length += elem[0].header_size + elem[0].byte_length;
-          }
-          length = obj.length;
-          header_size += LENGTH_LENGTH;
-          value = null;
-          break;
+          deferredSerialize(obj, function(subarray, byte_length) {
+            callback([{
+              type: type,
+              length: obj.length,
+              header_size: header_size + LENGTH_LENGTH,
+              byte_length: byte_length,
+              value: null
+            }].concat(subarray));
+          });
+          return;
 
         case Types.OBJECT:
+          var deferred = [];
           for (var key in obj) {
-            var map_byte_length = 0;
-            var key_obj = serialize(key);
-            var val_obj = serialize(obj[key]);
-            map_byte_length = key_obj[0].byte_length + key_obj[0].header_size +
-                              val_obj[0].byte_length + val_obj[0].header_size;
-            subarray = subarray.concat(key_obj, val_obj);
-            byte_length += map_byte_length;
+            deferred.push(key);
+            deferred.push(obj[key]);
             length++;
           }
-          header_size += LENGTH_LENGTH;
-          value = null;
+          deferredSerialize(deferred, function(subarray, byte_length) {
+            callback([{
+              type: type,
+              length: length,
+              header_size: header_size + LENGTH_LENGTH,
+              byte_length: byte_length,
+              value: null
+            }].concat(subarray));
+          });
+          return;
+
+        case Types.ARRAYBUFFER:
+          byte_length += obj.byteLength;
           break;
+
+        case Types.BLOB:
+          var mime_type = obj.type;
+          var reader = new FileReader();
+          reader.onload = function(buffer) {
+            deferredSerialize([buffer, mime_type], function(subarray, byte_length) {
+              callback([{
+                type: type,
+                length: length,
+                header_size: header_size,
+                byte_length: byte_length,
+                value: null
+              }].concat(subarray));
+            });
+          };
+          reader.onerror = function(e) {
+            throw 'FileReader Error: '+e;
+          };
+          reader.readAsArrayBuffer(obj);
+          return;
 
         default:
           throw 'Type Error: Type not supported.';
       }
     }
 
-    var result = [{
+    callback([{
       type: type,
       length: length,
       header_size: header_size,
       byte_length: byte_length,
       value: value
-    }].concat(subarray);
-
-    return result;
+    }].concat(subarray));
   };
 
   /**
@@ -327,7 +405,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
    * @param  ArrayBuffer buffer ArrayBuffer you want to deserialize
    * @return mixed              Retrieved JavaScript object
    */
-  var deserialize = function(buffer) {
+  var deserialize = function(buffer, callback) {
     var view = new DataView(buffer);
     var result = unpack(view, 0);
     return result.value;
@@ -344,23 +422,22 @@ Author: Eiji Kitamura (agektmr@gmail.com)
   };
 
   global.binarize = {
-    pack: function(obj) {
-      var result = null;
+    pack: function(obj, callback) {
       try {
-        result = pack(serialize(obj));
+        serialize(obj, function(array) {
+          callback(pack(array));
+        });
       } catch(e) {
         throw e;
       }
-      return result;
     },
-    unpack: function(buffer) {
-      var result = null;
+    unpack: function(buffer, callback) {
       try {
-        result = deserialize(buffer);
+        var result = deserialize(buffer);
+        callback(result);
       } catch(e) {
         throw e;
       }
-      return result;
     }
   };
 })(this);
