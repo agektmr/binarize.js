@@ -3,7 +3,7 @@ binarize.js is a JavaScript library that converts any variable, array or object 
 
 ## Why not Protocol Buffers nor MessagePack?
 Although [Protocol Buffers](https://code.google.com/p/protobuf/) and [MessagePack](http://msgpack.org/) are widely used and have wider adoption in terms of implementation, their existing JS implementations don’t yet support TypedArray.  
-Eventually when TypedArray is supported on either Protocol Buffers or MessagePack, you can replace binarize.js with them since they have the same API.  
+Eventually when TypedArray is supported on either Protocol Buffers or MessagePack, you can replace binarize.js with them since they have similar API.  
 
 # How do you use binarize.js?
     var typed = new Float64Array([1, Number.MAX_VALUE, Number.MIN_VALUE]);  
@@ -66,15 +66,17 @@ Undefined header will have no payload.
     +--------+----------------+  
 
 ## Strings
-Strings header will be followed by sequence of characters in Uint16Array.  
+Strings header will be followed by sequence of characters in Uint32Array.  
   
     ex) hello  
      type     byte_length      payload  
-    +--------+----------------+----------------+----------------+  
-    |0x02    |0x000a          |0x0068 (h)      |0x0065 (e)      |  
-    +--------+-------+--------+-------+--------+-------+--------+  
-    |0x006c (l)      |0x006c (l)      |0x006f (o)      |  
-    +----------------+----------------+----------------+  
+    +--------+----------------+--------------------------------+  
+    |0x02    |0x000a          |0x0068 (h)                      |  
+    +--------+-------+--------+------++---------------+--------+------+  
+    |0x0065 (e)                      |0x006c (l)                      |  
+    +--------------------------------+--------------------------------+  
+    |0x006c (l)                      |0x006f (o)                      |  
+    +--------------------------------+--------------------------------+  
 
 ## Number
 Number header will be followed by number in Float64Array.  
