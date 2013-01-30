@@ -217,6 +217,7 @@ ArrayBuffer header will be followed by sequence of 8bit unsigned int values.
 
 ## Blob
 Blob header will be followed by a combination of  payload in ArrayBuffer type and MIME type in Strings type.  
+  
     ex) a blob  
      type     byte_length  
     +--------+----------------+  
