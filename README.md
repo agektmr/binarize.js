@@ -18,10 +18,14 @@ Eventually when TypedArray is supported on either Protocol Buffers or MessagePac
     };  
   
     // convert a JavaScript object into ArrayBuffer  
-    var buffer = binarize.pack(object);  
+    var buffer = binarize.pack(function(object) {  
+      ...  
+    });  
   
     // retrieve original object from ArrayBuffer  
-    var original = binarize.unpack(buffer);  
+    var original = binarize.unpack(function(buffer) {  
+      ...  
+    });  
 
 ## Supported Types
     NULL:          0,  
@@ -38,7 +42,9 @@ Eventually when TypedArray is supported on either Protocol Buffers or MessagePac
     UINT16ARRAY:   11,  
     UINT32ARRAY:   12,  
     FLOAT32ARRAY:  13,  
-    FLOAT64ARRAY:  14  
+    FLOAT64ARRAY:  14,  
+    ARRAYBUFFER:   15,  
+    BLOB:          16  
   
 
 # Formats
@@ -91,7 +97,7 @@ Boolean header will followed by     0x1 when     true,     0x0 when     false.
     +--------+----------------+--------+  
 
 ## Array
-Array header will be followed by sequence of array elements.  
+Array header will be followed by sequence of Array elements.  
   
     ex) [1, 2, 3]  
      type     length           byte_length  
@@ -119,7 +125,7 @@ Object header will be followed by sequence of combinations of key in Strings typ
     +--------+----------------+----------------+  
     |0x06    |0x0002          |0x0042          |  
     +--------+----------------+----------------+----------------+  
-    |0x02    |0x0010          +0x006e (n)      |0x0061 (a)      |  
+    |0x02    |0x0010          |0x006e (n)      |0x0061 (a)      |  
     +--------+-------+--------+-------+--------+----------------+  
     |0x006d (m)      |0x0065 (e)      |0x02    |0x001a          |  
     +--------+-------+--------+-------+--------+----------------+  
@@ -199,3 +205,30 @@ Float64Array header will be followed by sequence of 64bit floating point values.
     +--------+----------------+------+-------------------------+  
     :                                |  
     +--------------------------------+  
+
+## ArrayBuffer
+ArrayBuffer header will be followed by sequence of 8bit unsigned int values.  
+  
+    ex) 16  
+     type     byte_length      payload  
+    +--------+----------------+--------+  
+    |0x0f    |0x0001          |0x10    |  
+    +--------+----------------+--------+  
+
+## Blob
+Blob header will be followed by a combination of  payload in ArrayBuffer type and MIME type in Strings type.  
+    ex) a blob  
+     type     byte_length  
+    +--------+----------------+  
+    |0x10    |0x0002          |  
+    +--------+----------------+--------+--------+--------+--------+  
+    |0x0f    |0x0010          |0x006e  |0x006e  |0x0061  |0x0061  |  
+    +--------+--------+-------++-------++-------++-------++-------++  
+    |0x006e  |0x006e  |0x0061  |0x0061  |0x006e  |0x006e  |0x0061  |  
+    +--------+--------+--------+--------+--------+--------+--------+  
+    |ArrayBuffer payload continuation...|  
+    +--------+----------------+---------+------+----------------+  
+    |0x02    |0x000a          |0x0069 (i)      |0x006d (m)      |  
+    +--------+-------+--------+-------+--------+-------+--------+  
+    |0x0061 (a)      |0x0067 (g)      |0x0065 (e)      |  
+    +----------------+----------------+----------------+
