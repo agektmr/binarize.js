@@ -47,7 +47,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
   var Length = [
     null,             // Types.NULL
     null,             // Types.UNDEFINED
-    'Uint32',         // Types.STRING
+    'Uint16',         // Types.STRING
     'Float64',        // Types.NUMBER
     'Uint8',          // Types.BOOLEAN
     null,             // Types.ARRAY

@@ -66,17 +66,15 @@ Undefined header will have no payload.
     +--------+----------------+  
 
 ## Strings
-Strings header will be followed by sequence of characters in Uint32Array.  
+Strings header will be followed by sequence of characters in Uint16Array.  
   
     ex) hello  
      type     byte_length      payload  
-    +--------+----------------+--------------------------------+  
-    |0x02    |0x000a          |0x0068 (h)                      |  
-    +--------+-------+--------+------++---------------+--------+------+  
-    |0x0065 (e)                      |0x006c (l)                      |  
-    +--------------------------------+--------------------------------+  
-    |0x006c (l)                      |0x006f (o)                      |  
-    +--------------------------------+--------------------------------+  
+    +--------+----------------+----------------+----------------+  
+    |0x02    |0x000a          |0x0068 (h)      |0x0065 (e)      |  
+    +--------+-------+--------+-------+--------+-------+--------+  
+    |0x006c (l)      |0x006c (l)      |0x006f (o)      |  
+    +----------------+----------------+----------------+  
 
 ## Number
 Number header will be followed by number in Float64Array.  
