@@ -15,14 +15,14 @@ limitations under the License.
 
 Author: Eiji Kitamura (agektmr@gmail.com)
 */
-(function(global) {
-  var debug = false;
+(function(root) {
+  var debug = true;
 
   var BIG_ENDIAN    = false,
       LITTLE_ENDIAN = true,
       TYPE_LENGTH   = Uint8Array.BYTES_PER_ELEMENT,
       LENGTH_LENGTH = Uint16Array.BYTES_PER_ELEMENT,
-      BYTES_LENGTH  = Uint16Array.BYTES_PER_ELEMENT;
+      BYTES_LENGTH  = Float64Array.BYTES_PER_ELEMENT;
 
   var Types = {
     NULL:          0,
@@ -41,7 +41,8 @@ Author: Eiji Kitamura (agektmr@gmail.com)
     FLOAT32ARRAY:  13,
     FLOAT64ARRAY:  14,
     ARRAYBUFFER:   15,
-    BLOB:          16
+    BLOB:          16,
+    FILE:          16
   };
 
   var Length = [
@@ -61,13 +62,13 @@ Author: Eiji Kitamura (agektmr@gmail.com)
     'Float32',        // Types.FLOAT32ARRAY
     'Float64',        // Types.FLOAT64ARRAY
     'Uint8',          // Types.ARRAYBUFFER
-    null              // Types.BLOB
+    'Uint8'           // Types.BLOB
   ];
 
   /**
    * packs seriarized elements array into a packed ArrayBuffer
    * @param  {Array} serialized Serialized array of elements.
-   * @return {ArrayBuffer} packed binary data
+   * @return {DataView} view of packed binary
    */
   var pack = function(serialized) {
     var cursor = 0, i = 0, j = 0, endianness = BIG_ENDIAN;
@@ -81,7 +82,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
           value       = serialized[i].value,
           byte_length = serialized[i].byte_length,
           type_name   = Length[type],
-          unit        = type_name === null ? 0 : global[type_name+'Array'].BYTES_PER_ELEMENT;
+          unit        = type_name === null ? 0 : root[type_name+'Array'].BYTES_PER_ELEMENT;
 
       // Set type
       view.setUint8(cursor, type, endianness);
@@ -94,7 +95,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
       }
 
       // Set byte length
-      view.setUint16(cursor, byte_length, endianness);
+      view.setFloat64(cursor, byte_length, endianness);
       cursor += BYTES_LENGTH;
 
       switch(type) {
@@ -139,7 +140,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
       }
     }
 
-    return view.buffer;
+    return view;
   };
 
   /**
@@ -163,11 +164,11 @@ Author: Eiji Kitamura (agektmr@gmail.com)
     }
 
     // Retrieve "byte_length"
-    byte_length = view.getUint16(cursor, endianness);
+    byte_length = view.getFloat64(cursor, endianness);
     cursor += BYTES_LENGTH;
 
     var type_name = Length[type];
-    var unit = type_name === null ? 0 : global[type_name+'Array'].BYTES_PER_ELEMENT;
+    var unit = type_name === null ? 0 : root[type_name+'Array'].BYTES_PER_ELEMENT;
 
     switch(type) {
       case Types.NULL:
@@ -206,7 +207,6 @@ Author: Eiji Kitamura (agektmr@gmail.com)
       case Types.FLOAT32ARRAY:
       case Types.FLOAT64ARRAY:
       case Types.ARRAYBUFFER:
-      case Types.BLOB:
         elem = [];
         length = byte_length / unit;
         for (i = 0; i < length; i++, cursor += unit) {
@@ -215,16 +215,31 @@ Author: Eiji Kitamura (agektmr@gmail.com)
 
         // If ArrayBuffer
         if (type === Types.ARRAYBUFFER) {
-          value = (new global[type_name+'Array'](elem)).buffer;
-
-        // If Blob
-        } else if (type === Types.BLOB) {
-          value = new Blob(new global[type_name+'Array'](elem), {type: 'text/plain'});
+          value = (new root[type_name+'Array'](elem)).buffer;
 
         // If other TypedArray
         } else {
-          value = new global[type_name+'Array'](elem);
+          value = new root[type_name+'Array'](elem);
 
+        }
+        break;
+
+      case Types.BLOB:
+        // If Blob is available (on browser)
+        if (root.Blob) {
+          var mime   = unpack(view, cursor);
+          var buffer = unpack(view, mime.cursor);
+          cursor = buffer.cursor;
+          value = new Blob([buffer.value], {type: mime.value});
+        } else {
+          // node.js implementation goes here
+          elem = [];
+          length = byte_length / unit;
+          for (i = 0; i < length; i++, cursor += unit) {
+            elem.push(view.getUint8(cursor, endianness));
+          }
+          // returns ArrayBuffer since node.js can't handle Blob
+          value = (new Uint8Array(elem)).buffer;
         }
         break;
 
@@ -307,7 +322,8 @@ Author: Eiji Kitamura (agektmr@gmail.com)
     } else {
       // Retrieve type number
       type = Types[obj.constructor.name.toUpperCase()];
-      unit = Length[type] === null ? 0 : global[Length[type]+'Array'].BYTES_PER_ELEMENT;
+      unit = Length[type] === undefined || Length[type] === null ? 0 :
+             root[Length[type]+'Array'].BYTES_PER_ELEMENT;
 
       switch(type) {
         case Types.NUMBER:
@@ -369,8 +385,9 @@ Author: Eiji Kitamura (agektmr@gmail.com)
         case Types.BLOB:
           var mime_type = obj.type;
           var reader = new FileReader();
-          reader.onload = function(buffer) {
-            deferredSerialize([buffer, mime_type], function(subarray, byte_length) {
+          reader.onload = function(e) {
+            // TODO: something's going wrong. byte_length doesn't match causing consequent elements fail
+            deferredSerialize([mime_type, e.target.result], function(subarray, byte_length) {
               callback([{
                 type: type,
                 length: length,
@@ -387,7 +404,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
           return;
 
         default:
-          throw 'Type Error: Type not supported.';
+          throw 'Type Error: Type "'+obj.constructor.name+'" not supported.';
       }
     }
 
@@ -411,17 +428,19 @@ Author: Eiji Kitamura (agektmr@gmail.com)
     return result.value;
   };
 
-  global.Test = {
-    BIG_ENDIAN: BIG_ENDIAN,
-    LITTLE_ENDIAN: LITTLE_ENDIAN,
-    Types: Types,
-    pack: pack,
-    unpack: unpack,
-    serialize: serialize,
-    deserialize: deserialize
-  };
+  if (debug) {
+    root.Test = {
+      BIG_ENDIAN: BIG_ENDIAN,
+      LITTLE_ENDIAN: LITTLE_ENDIAN,
+      Types: Types,
+      pack: pack,
+      unpack: unpack,
+      serialize: serialize,
+      deserialize: deserialize
+    };
+  }
 
-  global.binarize = {
+  var binarize = {
     pack: function(obj, callback) {
       try {
         serialize(obj, function(array) {
@@ -440,4 +459,10 @@ Author: Eiji Kitamura (agektmr@gmail.com)
       }
     }
   };
-})(this);
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = binarize;
+  } else {
+    root.binarize = binarize;
+  }
+})(typeof global !== 'undefined' ? global : this);
