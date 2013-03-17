@@ -44,14 +44,14 @@ describe("binarize.js", function() {
         {
           type: Test.Types.NULL,
           length: 0,
-          header_size: 3,
+          header_size: 5,
           byte_length: 0,
           value: originalObject
         }
       ];
       expectedHex = [
         'Uint8',    0,
-        'Uint16',   0
+        'Float64',   0
       ];
     });
 
@@ -81,14 +81,14 @@ console.log(array);
         {
           type: Test.Types.UNDEFINED,
           length: 0,
-          header_size: 3,
+          header_size: 5,
           byte_length: 0,
           value: originalObject
         }
       ];
       expectedHex = [
         'Uint8',    0,
-        'Uint16',   0
+        'Float64',   0
       ];
     });
 
@@ -116,14 +116,14 @@ console.log(array);
         {
           type: Test.Types.STRING,
           length: 18,
-          header_size: 3,
+          header_size: 9,
           byte_length: 36,
           value: originalObject
         }
       ];
       expectedHex = [
         'Uint8',    Test.Types.STRING,  // STRING
-        'Uint16',   36,
+        'Float64',  36,
         'Uint16',   'H'.charCodeAt(0),
         'Uint16',   'e'.charCodeAt(0),
         'Uint16',   'l'.charCodeAt(0),
@@ -169,14 +169,14 @@ console.log(array);
         {
           type: Test.Types.NUMBER,
           length: 0,
-          header_size: 3,
+          header_size: 9,
           byte_length: 8,
           value: originalObject
         }
       ];
       expectedHex = [
         'Uint8',    Test.Types.NUMBER,  // NUMBER
-        'Uint16',   8,
+        'Float64',  8,
         'Float64',  originalObject
       ];
     });
@@ -205,14 +205,14 @@ console.log(array);
         {
           type: Test.Types.BOOLEAN,
           length: 0,
-          header_size: 3,
+          header_size: 9,
           byte_length: 1,
           value: originalObject
         }
       ];
       expectedHex = [
         'Uint8',    Test.Types.BOOLEAN,  //BOOLEAN
-        'Uint16',   1,
+        'Float64',  1,
         'Uint8',    1
       ];
     });
@@ -246,57 +246,57 @@ console.log(array);
         {
           type: Test.Types.ARRAY,
           length: 4,
-          header_size: 5,
+          header_size: 11,
           byte_length: 29,
           value: null
         },
         {
           type: Test.Types.NUMBER,
           length: 0,
-          header_size: 3,
+          header_size: 9,
           byte_length: 8,
           value: originalObject[0]
         },
         {
           type: Test.Types.BOOLEAN,
           length: 0,
-          header_size: 3,
+          header_size: 9,
           byte_length: 1,
           value: originalObject[1]
         },
         {
           type: Test.Types.STRING,
           length: 4,
-          header_size: 3,
+          header_size: 9,
           byte_length: 8,
           value: originalObject[2]
         },
         {
           type: Test.Types.NULL,
           length: 0,
-          header_size: 3,
+          header_size: 9,
           byte_length: 0,
           value: originalObject[3]
         }
       ];
       expectedHex = [
         'Uint8',    Test.Types.ARRAY,  //ARRAY
-        'Uint16',   4,                 // length
+        'Float64',  4,                 // length
         'Uint16',   1,
         'Uint8',    Test.Types.NUMBER,
-        'Uint16',   8,
+        'Float64',  8,
         'Float64',  Number.MIN_VALUE,
         'Uint8',    Test.Types.BOOLEAN,
-        'Uint16',   1,
+        'Float64',  1,
         'Uint8',    0,                 // false
         'Uint8',    Test.Types.STRING,
-        'Uint16',   8,
+        'Float64',  8,
         'Uint16',   't'.charCodeAt(0),
         'Uint16',   'e'.charCodeAt(0),
         'Uint16',   's'.charCodeAt(0),
         'Uint16',   't'.charCodeAt(0),
         'Uint8',    Test.Types.NULL,
-        'Uint16',   0
+        'Float64',  0
       ];
     });
 
@@ -317,6 +317,44 @@ console.log(array);
     });
   });
 
+  describe("INT8ARRAY", function() {
+    beforeEach(function() {
+      originalObject = new Int8Array([-127, 127, 64]);
+      expectedArray = [
+        {
+          type: Test.Types.INT8ARRAY,
+          length: 3,
+          header_size: 9,
+          byte_length: 3,
+          value: [-127, 127, 64]
+        }
+      ];
+      expectedHex = [
+        'Uint8',    Test.Types.INT8ARRAY,  //INT8ARRAY
+        'Float64',  3,                     // byte_length
+        'Int8',     -127,
+        'Int8',     127,
+        'Int8',     64
+      ];
+    });
+
+    it("can serialize INT8ARRAY", function() {
+      expectedBuffer = hex2buffer(expectedHex);
+
+      Test.serialize(originalObject, function(array) {
+console.log(array);
+        expect(array).toEqual(expectedArray);
+        buffer = Test.pack(array);
+        expect(buffer).toEqual(expectedBuffer);
+      });
+    });
+
+    it("can deserialize INT8ARRAY", function() {
+      deserialized = Test.deserialize(buffer);
+      expect(deserialized).toEqual(originalObject);
+    });
+  });
+
   describe("Complex Object", function() {
     beforeEach(function() {
       originalObject = {
@@ -332,112 +370,112 @@ console.log(array);
         {
           type: Test.Types.OBJECT, // 224
           length: 3,
-          header_size: 5,
+          header_size: 11,
           byte_length: 217,
           value: null
         },
             {
               type: Test.Types.STRING, // 11
               length: 4,
-              header_size: 3,
+              header_size: 9,
               byte_length: 8,
               value: 'name'
             },
             {
               type: Test.Types.STRING, // 29
               length: 13,
-              header_size: 3,
+              header_size: 9,
               byte_length: 26,
               value: 'Eiji Kitamura'
             },
             {
               type: Test.Types.STRING, // 13
               length: 5,
-              header_size: 3,
+              header_size: 9,
               byte_length: 10,
               value: 'array'
             },
             {
               type: Test.Types.ARRAY, // 38
               length: 3,
-              header_size: 5,
+              header_size: 11,
               byte_length: 33,
               value: null
             },
                 {
                   type: Test.Types.NUMBER, // 11
                   length: 0,
-                  header_size: 3,
+                  header_size: 9,
                   byte_length: 8,
                   value: 1
                 },
                 {
                   type: Test.Types.NUMBER, // 11
                   length: 0,
-                  header_size: 3,
+                  header_size: 9,
                   byte_length: 8,
                   value: 2
                 },
                 {
                   type: Test.Types.NUMBER, // 11
                   length: 0,
-                  header_size: 3,
+                  header_size: 9,
                   byte_length: 8,
                   value: 3
                 },
             {
               type: Test.Types.STRING, // 15
               length: 6,
-              header_size: 3,
+              header_size: 9,
               byte_length: 12,
               value: 'object'
             },
             {
               type: Test.Types.OBJECT, // 113
               length: 3,
-              header_size: 5,
+              header_size: 11,
               byte_length: 106,
               value: null
             },
                 {
                   type: Test.Types.STRING, // 11
                   length: 4,
-                  header_size: 3,
+                  header_size: 9,
                   byte_length: 8,
                   value: 'name'
                 },
                 {
                   type: Test.Types.STRING, // 29
                   length: 13,
-                  header_size: 3,
+                  header_size: 9,
                   byte_length: 26,
                   value: 'Eiji Kitamura'
                 },
                 {
                   type: Test.Types.STRING, // 13
                   length: 5,
-                  header_size: 3,
+                  header_size: 9,
                   byte_length: 10,
                   value: 'hello'
                 },
                 {
                   type: Test.Types.STRING, // 13
                   length: 5,
-                  header_size: 3,
+                  header_size: 9,
                   byte_length: 10,
                   value: 'こんにちは'
                 },
                 {
                   type: Test.Types.STRING, // 13
                   length: 5,
-                  header_size: 3,
+                  header_size: 9,
                   byte_length: 10,
                   value: 'typed'
                 },
                 {
                   type: Test.Types.FLOAT64ARRAY, // 29
                   length: 3,
-                  header_size: 3,
+                  header_size: 9,
                   byte_length: 24,
                   value: typed
                 }
