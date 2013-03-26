@@ -197,15 +197,10 @@ Author: Eiji Kitamura (agektmr@gmail.com)
         case Types.UINT32ARRAY:
         case Types.FLOAT32ARRAY:
         case Types.FLOAT64ARRAY:
-          var _view = new Uint8Array(view.buffer, cursor, byte_length);
-          _view.set(value);
-          cursor += byte_length;
-          break;
-
         case Types.ARRAYBUFFER:
         case Types.BUFFER:
           var _view = new Uint8Array(view.buffer, cursor, byte_length);
-          _view.set(new Uint8Array(value));
+          _view.set(new Uint8Array(value.buffer));
           cursor += byte_length;
           break;
 
