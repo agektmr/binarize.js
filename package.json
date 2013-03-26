@@ -1,7 +1,7 @@
 {
   "name": "binarize.js",
   "description": "binarize.js is a JavaScript library that converts any variable, array or object into binary format. This library is useful when you want to send and receive complex objects (especially when they include TypedArray) in ArrayBuffer format over WebSocket, XHR2, etc.",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "author": {
     "name": "Eiji Kitamura",
     "url": "http://profiles.google.com/agektmr"
