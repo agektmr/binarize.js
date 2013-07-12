@@ -108,7 +108,117 @@ Author: Eiji Kitamura (agektmr@gmail.com)
     for (i = 1; i < table.length; i++) {
       console.log(table[i].join(' '));
     }
-  }
+  };
+
+  var find_type = function(obj) {
+    var type = undefined;
+
+    if (obj === undefined) {
+      type = Types.UNDEFINED;
+
+    } else if (obj === null) {
+      type = Types.NULL;
+
+    } else {
+      var const_name = obj.constructor.name;
+      if (const_name !== undefined) {
+        // return type by .constructor.name if possible
+        type = Types[const_name.toUpperCase()];
+
+      } else {
+        // Work around when constructor.name is not defined
+        switch (typeof obj) {
+          case 'string':
+            type = Types.STRING;
+            break;
+
+          case 'number':
+            type = Types.NUMBER;
+            break;
+
+          case 'boolean':
+            type = Types.BOOLEAN;
+            break;
+
+          case 'object':
+            if (obj instanceof Array) {
+              type = Types.ARRAY;
+
+            } else if (obj instanceof Int8Array) {
+              type = Types.INT8ARRAY;
+
+            } else if (obj instanceof Int16Array) {
+              type = Types.INT16ARRAY;
+
+            } else if (obj instanceof Int32Array) {
+              type = Types.INT32ARRAY;
+
+            } else if (obj instanceof Uint8Array) {
+              type = Types.UINT8ARRAY;
+
+            } else if (obj instanceof Uint16Array) {
+              type = Types.UINT16ARRAY;
+
+            } else if (obj instanceof Uint32Array) {
+              type = Types.UINT32ARRAY;
+
+            } else if (obj instanceof Float32Array) {
+              type = Types.FLOAT32ARRAY;
+
+            } else if (obj instanceof Float64Array) {
+              type = Types.FLOAT64ARRAY;
+
+            } else if (obj instanceof ArrayBuffer) {
+              type = Types.ARRAYBUFFER;
+
+            } else if (obj instanceof Blob) { // including File
+              type = Types.BLOB;
+
+            } else if (obj instanceof Buffer) { // node.js only
+              type = Types.BUFFER;
+
+            } else if (obj instanceof Object) {
+              type = Types.OBJECT;
+
+            }
+            break;
+
+          default:
+            break;
+        }
+      }
+    }
+    return type;
+  };
+
+  var utf16_utf8 = function(dec_code) {
+    return (dec_code < 0x80 ? toHex2(dec_code)
+             // 011111111111 0x800
+             //     00011111 0x3f
+             //     11000000 0xc0
+             : (dec_code < 0x800 ? toHex2(dec_code >> 6 & 0x1f | 0xc0)
+             // 011111111111 0x800
+             //     11100000 0xe0
+             //     00011111 0x3f
+             //     11000000 0x80
+               : toHex2(dec_code >> 12 | 0xe0)
+               + toHex2(dec_code >> 6 & 0x3f | 0x80)
+             ) + toHex2(dec_code & 0x3f | 0x80)
+           );
+  };
+
+  var utf8_utf16 = function(code) {
+    return (code.length <= 2
+              ? hex2ToN(code,0)
+              : (code.length <= 4
+                ? ((hex2ToN(code,0) & 0x1f) << 6) +
+                   (hex2ToN(code,1) & 0x3f)
+                : ((hex2ToN(code,0) & 0xf) << 12) +
+                  ((hex2ToN(code,1) & 0x3f) << 6) +
+                  (hex2ToN(code,2) & 0x3f)
+              )
+            );
+  };
 
   /**
    * packs seriarized elements array into a packed ArrayBuffer
@@ -197,10 +307,15 @@ Author: Eiji Kitamura (agektmr@gmail.com)
         case Types.UINT32ARRAY:
         case Types.FLOAT32ARRAY:
         case Types.FLOAT64ARRAY:
+          var _view = new Uint8Array(view.buffer, cursor, byte_length);
+          _view.set(new Uint8Array(value.buffer));
+          cursor += byte_length;
+          break;
+
         case Types.ARRAYBUFFER:
         case Types.BUFFER:
           var _view = new Uint8Array(view.buffer, cursor, byte_length);
-          _view.set(new Uint8Array(value.buffer));
+          _view.set(new Uint8Array(value));
           cursor += byte_length;
           break;
 
@@ -210,7 +325,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
           break;
 
         default:
-          throw 'Type Error: Unexpected type found.';
+          throw 'TypeError: Unexpected type found.';
       }
 
       if (debug) {
@@ -376,7 +491,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
         break;
 
       default:
-        throw 'Type Error: Type not supported.';
+        throw 'TypeError: Type not supported.';
     }
     return {
       value: value,
@@ -423,102 +538,100 @@ Author: Eiji Kitamura (agektmr@gmail.com)
         header_size = TYPE_LENGTH + BYTES_LENGTH,
         type, byte_length = 0, length = 0, value = obj;
 
-    if (obj === undefined) {
-      type = Types.UNDEFINED;
+    type = find_type(obj);
 
-    } else if (obj === null) {
-      type = Types.NULL;
+    unit = Length[type] === undefined || Length[type] === null ? 0 :
+           root[Length[type]+'Array'].BYTES_PER_ELEMENT;
 
-    } else {
-      // Retrieve type number
-      type = Types[obj.constructor.name.toUpperCase()];
-      unit = Length[type] === undefined || Length[type] === null ? 0 :
-             root[Length[type]+'Array'].BYTES_PER_ELEMENT;
+    switch(type) {
+      case Types.UNDEFINED:
+      case Types.NULL:
+        break;
 
-      switch(type) {
-        case Types.NUMBER:
-        case Types.BOOLEAN:
-          byte_length = unit;
-          break;
+      case Types.NUMBER:
+      case Types.BOOLEAN:
+        byte_length = unit;
+        break;
 
-        case Types.STRING:
-          length = obj.length;
-          byte_length += length * unit;
-          break;
+      case Types.STRING:
+        length = obj.length;
+        byte_length += length * unit;
+        break;
 
-        case Types.INT8ARRAY:
-        case Types.INT16ARRAY:
-        case Types.INT32ARRAY:
-        case Types.UINT8ARRAY:
-        case Types.UINT16ARRAY:
-        case Types.UINT32ARRAY:
-        case Types.FLOAT32ARRAY:
-        case Types.FLOAT64ARRAY:
-          length = obj.length;
-          byte_length += length * unit;
-          break;
+      case Types.INT8ARRAY:
+      case Types.INT16ARRAY:
+      case Types.INT32ARRAY:
+      case Types.UINT8ARRAY:
+      case Types.UINT16ARRAY:
+      case Types.UINT32ARRAY:
+      case Types.FLOAT32ARRAY:
+      case Types.FLOAT64ARRAY:
+        length = obj.length;
+        byte_length += length * unit;
+        break;
 
-        case Types.ARRAY:
-          deferredSerialize(obj, function(subarray, byte_length) {
-            callback([{
-              type: type,
-              length: obj.length,
-              header_size: header_size + LENGTH_LENGTH,
-              byte_length: byte_length,
-              value: null
-            }].concat(subarray));
-          });
-          return;
+      case Types.ARRAY:
+        deferredSerialize(obj, function(subarray, byte_length) {
+          callback([{
+            type: type,
+            length: obj.length,
+            header_size: header_size + LENGTH_LENGTH,
+            byte_length: byte_length,
+            value: null
+          }].concat(subarray));
+        });
+        return;
 
-        case Types.OBJECT:
-          var deferred = [];
-          for (var key in obj) {
+      case Types.OBJECT:
+        var deferred = [];
+        for (var key in obj) {
+          if (obj.hasOwnProperty(key)) {
             deferred.push(key);
             deferred.push(obj[key]);
             length++;
           }
-          deferredSerialize(deferred, function(subarray, byte_length) {
+        }
+        deferredSerialize(deferred, function(subarray, byte_length) {
+          callback([{
+            type: type,
+            length: length,
+            header_size: header_size + LENGTH_LENGTH,
+            byte_length: byte_length,
+            value: null
+          }].concat(subarray));
+        });
+        return;
+
+      case Types.ARRAYBUFFER:
+        byte_length += obj.byteLength;
+        break;
+
+      case Types.BLOB:
+        var mime_type = obj.type;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          deferredSerialize([mime_type, e.target.result], function(subarray, byte_length) {
             callback([{
               type: type,
               length: length,
-              header_size: header_size + LENGTH_LENGTH,
+              header_size: header_size,
               byte_length: byte_length,
               value: null
             }].concat(subarray));
           });
-          return;
+        };
+        reader.onerror = function(e) {
+          throw 'FileReader Error: '+e;
+        };
+        reader.readAsArrayBuffer(obj);
+        return;
 
-        case Types.ARRAYBUFFER:
-          byte_length += obj.byteLength;
-          break;
+      case Types.BUFFER:
+        byte_length += obj.length;
+        break;
 
-        case Types.BLOB:
-          var mime_type = obj.type;
-          var reader = new FileReader();
-          reader.onload = function(e) {
-            deferredSerialize([mime_type, e.target.result], function(subarray, byte_length) {
-              callback([{
-                type: type,
-                length: length,
-                header_size: header_size,
-                byte_length: byte_length,
-                value: null
-              }].concat(subarray));
-            });
-          };
-          reader.onerror = function(e) {
-            throw 'FileReader Error: '+e;
-          };
-          reader.readAsArrayBuffer(obj);
-          return;
-
-        case Types.BUFFER:
-          byte_length += obj.length;
-          break;
-
-        default:
-          throw 'Type Error: Type "'+obj.constructor.name+'" not supported.';
-      }
+      default:
+        throw 'TypeError: Type "'+obj.constructor.name+'" not supported.';
     }
 
     callback([{
