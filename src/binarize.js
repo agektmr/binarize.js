@@ -234,7 +234,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
     var view = new DataView(ab);
 
     for (i = 0; i < serialized.length; i++) {
-      var start       = cursor;
+      var start       = cursor,
           header_size = serialized[i].header_size,
           type        = serialized[i].type,
           length      = serialized[i].length,
@@ -286,7 +286,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
             console.info('Actual Content %c"'+value+'"', 'font-weight:bold;');
           }
           for (j = 0; j < length; j++, cursor += unit) {
-            view['set'+type_name](cursor, value.charCodeAt(j), endianness);
+            view.setUint16(cursor, value.charCodeAt(j), endianness);
           }
           break;
 
@@ -389,7 +389,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
         length = byte_length / unit;
         var string = [];
         for (i = 0; i < length; i++) {
-          var code = view['get'+type_name](cursor, endianness);
+          var code = view.getUint16(cursor, endianness);
           cursor += unit;
           string.push(String.fromCharCode(code));
         }
@@ -401,7 +401,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
         break;
 
       case Types.NUMBER:
-        value = view['get'+type_name](cursor, endianness);
+        value = view.getFloat64(cursor, endianness);
         cursor += unit;
         if (debug) {
           console.info('Actual Content %c"'+value.toString()+'"', 'font-weight:bold;');
@@ -410,7 +410,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
         break;
 
       case Types.BOOLEAN:
-        value = view['get'+type_name](cursor, endianness) === 1 ? true : false;
+        value = view.getUint8(cursor, endianness) === 1 ? true : false;
         cursor += unit;
         if (debug) {
           console.info('Actual Content %c"'+value.toString()+'"', 'font-weight:bold;');
