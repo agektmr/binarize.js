@@ -234,7 +234,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
     var view = new DataView(ab);
 
     for (i = 0; i < serialized.length; i++) {
-      var start       = cursor;
+      var start       = cursor,
           header_size = serialized[i].header_size,
           type        = serialized[i].type,
           length      = serialized[i].length,
