@@ -124,8 +124,9 @@ Author: Eiji Kitamura (agektmr@gmail.com)
       if (const_name !== undefined) {
         // return type by .constructor.name if possible
         type = Types[const_name.toUpperCase()];
+      }
 
-      } else {
+      if(const_name === undefined || type == undefined) {
         // Work around when constructor.name is not defined
         switch (typeof obj) {
           case 'string':
@@ -174,7 +175,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
             } else if (obj instanceof Blob) { // including File
               type = Types.BLOB;
 
-            } else if (obj instanceof Buffer) { // node.js only
+            } else if (typeof Buffer === "object" && obj instanceof Buffer) { // node.js only
               type = Types.BUFFER;
 
             } else if (obj instanceof Object) {
@@ -696,3 +697,4 @@ Author: Eiji Kitamura (agektmr@gmail.com)
     root.binarize = binarize;
   }
 })(typeof global !== 'undefined' ? global : this);
+
