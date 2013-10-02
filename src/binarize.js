@@ -124,8 +124,9 @@ Author: Eiji Kitamura (agektmr@gmail.com)
       if (const_name !== undefined) {
         // return type by .constructor.name if possible
         type = Types[const_name.toUpperCase()];
+      }
 
-      } else {
+      if(const_name === undefined || type == undefined) {
         // Work around when constructor.name is not defined
         switch (typeof obj) {
           case 'string':
