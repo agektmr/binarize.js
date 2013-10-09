@@ -191,33 +191,12 @@ Author: Eiji Kitamura (agektmr@gmail.com)
     return type;
   };
 
-  var utf16_utf8 = function(dec_code) {
-    return (dec_code < 0x80 ? toHex2(dec_code)
-             // 011111111111 0x800
-             //     00011111 0x3f
-             //     11000000 0xc0
-             : (dec_code < 0x800 ? toHex2(dec_code >> 6 & 0x1f | 0xc0)
-             // 011111111111 0x800
-             //     11100000 0xe0
-             //     00011111 0x3f
-             //     11000000 0x80
-               : toHex2(dec_code >> 12 | 0xe0)
-               + toHex2(dec_code >> 6 & 0x3f | 0x80)
-             ) + toHex2(dec_code & 0x3f | 0x80)
-           );
+  var utf16_utf8 = function(string) {
+    return unescape(encodeURIComponent(string));
   };
 
-  var utf8_utf16 = function(code) {
-    return (code.length <= 2
-              ? hex2ToN(code,0)
-              : (code.length <= 4
-                ? ((hex2ToN(code,0) & 0x1f) << 6) +
-                   (hex2ToN(code,1) & 0x3f)
-                : ((hex2ToN(code,0) & 0xf) << 12) +
-                  ((hex2ToN(code,1) & 0x3f) << 6) +
-                  (hex2ToN(code,2) & 0x3f)
-              )
-            );
+  var utf8_utf16 = function(bytes) {
+    return decodeURIComponent(escape(bytes));
   };
 
   /**

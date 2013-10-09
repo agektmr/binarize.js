@@ -39,25 +39,25 @@ Eventually when TypedArray is supported on either Protocol Buffers or MessagePac
                    | boolean
                    | array
                    | object
-    null         ::= 0x00 byte_length
-    undefined    ::= 0x01 byte_length
-    string       ::= 0x02 byte_length int16*
-    number       ::= 0x03 byte_length float64
-    boolean      ::= 0x04 byte_length (0x00                    false
-                                    |  0x01)                   true
-    array        ::= 0x05 length byte_length element*
-    object       ::= 0x06 length byte_length (string element)*
-    int8array    ::= 0x07 byte_length int8*
-    int16array   ::= 0x08 byte_length int16*
-    int32array   ::= 0x09 byte_length int32*
-    uint8array   ::= 0x0a byte_length uint8*
-    uint16array  ::= 0x0b byte_length uint16*
-    uint32array  ::= 0x0c byte_length uint32*
-    float32array ::= 0x0d byte_length float32*
-    float64array ::= 0x0e byte_length float64*
-    arraybuffer  ::= 0x0f byte_length uint8*
-    blob         ::= 0x10 byte_length arraybuffer string
-    buffer       ::= blob                                       blob imitation on node.js
+    null         ::= "0x00" byte_length
+    undefined    ::= "0x01" byte_length
+    string       ::= "0x02" byte_length int16*
+    number       ::= "0x03" byte_length float64
+    boolean      ::= "0x04" byte_length (0x00                    false
+                                      |  0x01)                   true
+    array        ::= "0x05" length byte_length element*
+    object       ::= "0x06" length byte_length (string element)*
+    int8array    ::= "0x07" byte_length int8*
+    int16array   ::= "0x08" byte_length int16*
+    int32array   ::= "0x09" byte_length int32*
+    uint8array   ::= "0x0a" byte_length uint8*
+    uint16array  ::= "0x0b" byte_length uint16*
+    uint32array  ::= "0x0c" byte_length uint32*
+    float32array ::= "0x0d" byte_length float32*
+    float64array ::= "0x0e" byte_length float64*
+    arraybuffer  ::= "0x0f" byte_length uint8*
+    blob         ::= "0x10" byte_length arraybuffer string
+    buffer       ::= blob                                         blob imitation on node.js
 
 ## Null
 Null header will have no payload.  
