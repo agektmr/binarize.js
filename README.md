@@ -18,12 +18,12 @@ Eventually when TypedArray is supported on either Protocol Buffers or MessagePac
     };  
   
     // convert a JavaScript object into ArrayBuffer  
-    var buffer = binarize.pack(function(object) {  
+    binarize.pack(object, function(buffer) {  
       ...  
     });  
   
     // retrieve original object from ArrayBuffer  
-    var original = binarize.unpack(function(buffer) {  
+    binarize.unpack(buffer, function(object) {  
       ...  
     });  
 
