@@ -15,171 +15,162 @@ limitations under the License.
 
 Author: Eiji Kitamura (agektmr@gmail.com)
 */
-(function(root) {
+
+(function (root) {
   var debug = false;
 
-  var BIG_ENDIAN    = false,
-      LITTLE_ENDIAN = true,
-      TYPE_LENGTH   = Uint8Array.BYTES_PER_ELEMENT,
-      LENGTH_LENGTH = Uint16Array.BYTES_PER_ELEMENT,
-      BYTES_LENGTH  = Uint32Array.BYTES_PER_ELEMENT;
+  var BIG_ENDIAN = false,
+    LITTLE_ENDIAN = true,
+    TYPE_LENGTH = Uint8Array.BYTES_PER_ELEMENT,
+    LENGTH_LENGTH = Uint16Array.BYTES_PER_ELEMENT,
+    BYTES_LENGTH = Uint32Array.BYTES_PER_ELEMENT;
 
   var Types = {
-    NULL:          0,
-    UNDEFINED:     1,
-    STRING:        2,
-    NUMBER:        3,
-    BOOLEAN:       4,
-    ARRAY:         5,
-    OBJECT:        6,
-    INT8ARRAY:     7,
-    INT16ARRAY:    8,
-    INT32ARRAY:    9,
-    UINT8ARRAY:    10,
-    UINT16ARRAY:   11,
-    UINT32ARRAY:   12,
-    FLOAT32ARRAY:  13,
-    FLOAT64ARRAY:  14,
-    ARRAYBUFFER:   15,
-    BLOB:          16,
-    FILE:          16,
-    BUFFER:        17   // Special type for node.js
+    NULL: 0,
+    UNDEFINED: 1,
+    STRING: 2,
+    NUMBER: 3,
+    BOOLEAN: 4,
+    ARRAY: 5,
+    OBJECT: 6,
+    INT8ARRAY: 7,
+    INT16ARRAY: 8,
+    INT32ARRAY: 9,
+    UINT8ARRAY: 10,
+    UINT16ARRAY: 11,
+    UINT32ARRAY: 12,
+    FLOAT32ARRAY: 13,
+    FLOAT64ARRAY: 14,
+    ARRAYBUFFER: 15,
+    BLOB: 16,
+    FILE: 16,
+    BUFFER: 17, // Special type for node.js
+    BIGINT: 18,
   };
 
   if (debug) {
     var TypeNames = [
-      'NULL',
-      'UNDEFINED',
-      'STRING',
-      'NUMBER',
-      'BOOLEAN',
-      'ARRAY',
-      'OBJECT',
-      'INT8ARRAY',
-      'INT16ARRAY',
-      'INT32ARRAY',
-      'UINT8ARRAY',
-      'UINT16ARRAY',
-      'UINT32ARRAY',
-      'FLOAT32ARRAY',
-      'FLOAT64ARRAY',
-      'ARRAYBUFFER',
-      'BLOB',
-      'BUFFER'
+      "NULL",
+      "UNDEFINED",
+      "STRING",
+      "NUMBER",
+      "BOOLEAN",
+      "ARRAY",
+      "OBJECT",
+      "INT8ARRAY",
+      "INT16ARRAY",
+      "INT32ARRAY",
+      "UINT8ARRAY",
+      "UINT16ARRAY",
+      "UINT32ARRAY",
+      "FLOAT32ARRAY",
+      "FLOAT64ARRAY",
+      "ARRAYBUFFER",
+      "BLOB",
+      "BUFFER",
+      "BIGINT",
     ];
   }
 
   var Length = [
-    null,             // Types.NULL
-    null,             // Types.UNDEFINED
-    'Uint16',         // Types.STRING
-    'Float64',        // Types.NUMBER
-    'Uint8',          // Types.BOOLEAN
-    null,             // Types.ARRAY
-    null,             // Types.OBJECT
-    'Int8',           // Types.INT8ARRAY
-    'Int16',          // Types.INT16ARRAY
-    'Int32',          // Types.INT32ARRAY
-    'Uint8',          // Types.UINT8ARRAY
-    'Uint16',         // Types.UINT16ARRAY
-    'Uint32',         // Types.UINT32ARRAY
-    'Float32',        // Types.FLOAT32ARRAY
-    'Float64',        // Types.FLOAT64ARRAY
-    'Uint8',          // Types.ARRAYBUFFER
-    'Uint8',          // Types.BLOB, Types.FILE
-    'Uint8'           // Types.BUFFER
+    null, // Types.NULL
+    null, // Types.UNDEFINED
+    "Uint16", // Types.STRING
+    "Float64", // Types.NUMBER
+    "Uint8", // Types.BOOLEAN
+    null, // Types.ARRAY
+    null, // Types.OBJECT
+    "Int8", // Types.INT8ARRAY
+    "Int16", // Types.INT16ARRAY
+    "Int32", // Types.INT32ARRAY
+    "Uint8", // Types.UINT8ARRAY
+    "Uint16", // Types.UINT16ARRAY
+    "Uint32", // Types.UINT32ARRAY
+    "Float32", // Types.FLOAT32ARRAY
+    "Float64", // Types.FLOAT64ARRAY
+    "Uint8", // Types.ARRAYBUFFER
+    "Uint8", // Types.BLOB, Types.FILE
+    "Uint8", // Types.BUFFER
+    "Uint16", // Types.Bigint
   ];
 
-  var binary_dump = function(view, start, length) {
+  var binary_dump = function (view, start, length) {
     var table = [],
-        endianness = BIG_ENDIAN,
-        ROW_LENGTH = 40;
+      endianness = BIG_ENDIAN,
+      ROW_LENGTH = 40;
     table[0] = [];
     for (var i = 0; i < ROW_LENGTH; i++) {
-      table[0][i] = i < 10 ? '0'+i.toString(10) : i.toString(10);
+      table[0][i] = i < 10 ? "0" + i.toString(10) : i.toString(10);
     }
     for (i = 0; i < length; i++) {
-      var code = view.getUint8(start+i, endianness);
-      var index = ~~(i/ROW_LENGTH) + 1;
-      if (typeof table[index] === 'undefined') table[index] = [];
-      table[index][i%ROW_LENGTH] = code < 16 ? '0'+code.toString(16) : code.toString(16);
+      var code = view.getUint8(start + i, endianness);
+      var index = ~~(i / ROW_LENGTH) + 1;
+      if (typeof table[index] === "undefined") table[index] = [];
+      table[index][i % ROW_LENGTH] =
+        code < 16 ? "0" + code.toString(16) : code.toString(16);
     }
-    console.log('%c'+table[0].join(' '), 'font-weight: bold;');
+    console.log("%c" + table[0].join(" "), "font-weight: bold;");
     for (i = 1; i < table.length; i++) {
-      console.log(table[i].join(' '));
+      console.log(table[i].join(" "));
     }
   };
 
-  var find_type = function(obj) {
+  var find_type = function (obj) {
     var type = undefined;
 
     if (obj === undefined) {
       type = Types.UNDEFINED;
-
     } else if (obj === null) {
       type = Types.NULL;
-
     } else {
       var const_name = obj.constructor.name;
       if (const_name !== undefined) {
         // return type by .constructor.name if possible
         type = Types[const_name.toUpperCase()];
-
       } else {
         // Work around when constructor.name is not defined
         switch (typeof obj) {
-          case 'string':
+          case "string":
             type = Types.STRING;
             break;
 
-          case 'number':
+          case "number":
             type = Types.NUMBER;
             break;
 
-          case 'boolean':
+          case "boolean":
             type = Types.BOOLEAN;
             break;
 
-          case 'object':
+          case "object":
             if (obj instanceof Array) {
               type = Types.ARRAY;
-
             } else if (obj instanceof Int8Array) {
               type = Types.INT8ARRAY;
-
             } else if (obj instanceof Int16Array) {
               type = Types.INT16ARRAY;
-
             } else if (obj instanceof Int32Array) {
               type = Types.INT32ARRAY;
-
             } else if (obj instanceof Uint8Array) {
               type = Types.UINT8ARRAY;
-
             } else if (obj instanceof Uint16Array) {
               type = Types.UINT16ARRAY;
-
             } else if (obj instanceof Uint32Array) {
               type = Types.UINT32ARRAY;
-
             } else if (obj instanceof Float32Array) {
               type = Types.FLOAT32ARRAY;
-
             } else if (obj instanceof Float64Array) {
               type = Types.FLOAT64ARRAY;
-
             } else if (obj instanceof ArrayBuffer) {
               type = Types.ARRAYBUFFER;
-
-            } else if (obj instanceof Blob) { // including File
+            } else if (obj instanceof Blob) {
+              // including File
               type = Types.BLOB;
-
-            } else if (obj instanceof Buffer) { // node.js only
+            } else if (obj instanceof Buffer) {
+              // node.js only
               type = Types.BUFFER;
-
             } else if (obj instanceof Object) {
               type = Types.OBJECT;
-
             }
             break;
 
@@ -191,11 +182,11 @@ Author: Eiji Kitamura (agektmr@gmail.com)
     return type;
   };
 
-  var utf16_utf8 = function(string) {
+  var utf16_utf8 = function (string) {
     return unescape(encodeURIComponent(string));
   };
 
-  var utf8_utf16 = function(bytes) {
+  var utf8_utf16 = function (bytes) {
     return decodeURIComponent(escape(bytes));
   };
 
@@ -204,23 +195,31 @@ Author: Eiji Kitamura (agektmr@gmail.com)
    * @param  {Array} serialized Serialized array of elements.
    * @return {DataView} view of packed binary
    */
-  var pack = function(serialized) {
+  var pack = function (serialized) {
     var cursor = 0,
-        i = 0, j = 0,
-        endianness = BIG_ENDIAN;
+      i = 0,
+      j = 0,
+      endianness = BIG_ENDIAN;
 
-    var ab = new ArrayBuffer(serialized[0].byte_length + serialized[0].header_size);
+    var ab = new ArrayBuffer(
+      serialized[0].byte_length + serialized[0].header_size
+    );
     var view = new DataView(ab);
 
     for (i = 0; i < serialized.length; i++) {
-      var start       = cursor,
-          header_size = serialized[i].header_size,
-          type        = serialized[i].type,
-          length      = serialized[i].length,
-          value       = serialized[i].value,
-          byte_length = serialized[i].byte_length,
-          type_name   = Length[type],
-          unit        = type_name === null ? 0 : root[type_name+'Array'].BYTES_PER_ELEMENT;
+      var start = cursor,
+        header_size = serialized[i].header_size,
+        type = serialized[i].type,
+        length = serialized[i].length,
+        value = serialized[i].value,
+        byte_length = serialized[i].byte_length,
+        type_name = Length[type],
+        unit =
+          type_name === null ? 0 : root[type_name + "Array"].BYTES_PER_ELEMENT;
+
+      if (type === 18) {
+        value = value.toString(10);
+      }
 
       // Set type
       if (type === Types.BUFFER) {
@@ -232,7 +231,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
       cursor += TYPE_LENGTH;
 
       if (debug) {
-        console.info('Packing', type, TypeNames[type]);
+        console.info("Packing", type, TypeNames[type]);
       }
 
       // Set length if required
@@ -241,7 +240,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
         cursor += LENGTH_LENGTH;
 
         if (debug) {
-          console.info('Content Length', length);
+          console.info("Content Length", length);
         }
       }
 
@@ -250,19 +249,22 @@ Author: Eiji Kitamura (agektmr@gmail.com)
       cursor += BYTES_LENGTH;
 
       if (debug) {
-        console.info('Header Size', header_size, 'bytes');
-        console.info('Byte Length', byte_length, 'bytes');
+        console.info("Header Size", header_size, "bytes");
+        console.info("Byte Length", byte_length, "bytes");
       }
-
-      switch(type) {
+      switch (type) {
         case Types.NULL:
         case Types.UNDEFINED:
           // NULL and UNDEFINED doesn't have any payload
           break;
 
+        case Types.BIGINT:
         case Types.STRING:
           if (debug) {
-            console.info('Actual Content %c"'+value+'"', 'font-weight:bold;');
+            console.info(
+              'Actual Content %c"' + value + '"',
+              "font-weight:bold;"
+            );
           }
           for (j = 0; j < length; j++, cursor += unit) {
             view.setUint16(cursor, value.charCodeAt(j), endianness);
@@ -272,9 +274,9 @@ Author: Eiji Kitamura (agektmr@gmail.com)
         case Types.NUMBER:
         case Types.BOOLEAN:
           if (debug) {
-            console.info('%c'+value.toString(), 'font-weight:bold;');
+            console.info("%c" + value.toString(), "font-weight:bold;");
           }
-          view['set'+type_name](cursor, value, endianness);
+          view["set" + type_name](cursor, value, endianness);
           cursor += unit;
           break;
 
@@ -304,7 +306,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
           break;
 
         default:
-          throw 'TypeError: Unexpected type found.';
+          throw "TypeError: Unexpected type found.";
       }
 
       if (debug) {
@@ -321,8 +323,10 @@ Author: Eiji Kitamura (agektmr@gmail.com)
    * @param  {Number} cursor [description]
    * @return {Object}
    */
-  var unpack = function(view, cursor) {
-    var i = 0, endianness = BIG_ENDIAN, start = cursor;
+  var unpack = function (view, cursor) {
+    var i = 0,
+      endianness = BIG_ENDIAN,
+      start = cursor;
     var type, length, byte_length, value, elem;
 
     // Retrieve "type"
@@ -330,7 +334,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
     cursor += TYPE_LENGTH;
 
     if (debug) {
-      console.info('Unpacking', type, TypeNames[type]);
+      console.info("Unpacking", type, TypeNames[type]);
     }
 
     // Retrieve "length"
@@ -339,7 +343,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
       cursor += LENGTH_LENGTH;
 
       if (debug) {
-        console.info('Content Length', length);
+        console.info("Content Length", length);
       }
     }
 
@@ -348,34 +352,40 @@ Author: Eiji Kitamura (agektmr@gmail.com)
     cursor += BYTES_LENGTH;
 
     if (debug) {
-      console.info('Byte Length', byte_length, 'bytes');
+      console.info("Byte Length", byte_length, "bytes");
     }
 
     var type_name = Length[type];
-    var unit = type_name === null ? 0 : root[type_name+'Array'].BYTES_PER_ELEMENT;
+    var unit =
+      type_name === null ? 0 : root[type_name + "Array"].BYTES_PER_ELEMENT;
 
-    switch(type) {
+    switch (type) {
       case Types.NULL:
       case Types.UNDEFINED:
         if (debug) {
-          binary_dump(view, start, cursor-start);
+          binary_dump(view, start, cursor - start);
         }
         // NULL and UNDEFINED doesn't have any octet
         value = null;
         break;
 
+      case Types.BIGINT:
       case Types.STRING:
         length = byte_length / unit;
         var string = [];
+
         for (i = 0; i < length; i++) {
           var code = view.getUint16(cursor, endianness);
           cursor += unit;
           string.push(String.fromCharCode(code));
         }
-        value = string.join('');
+        value = string.join("");
+        if (type === Types.BIGINT) {
+          value = BigInt(value);
+        }
         if (debug) {
-          console.info('Actual Content %c"'+value+'"', 'font-weight:bold;');
-          binary_dump(view, start, cursor-start);
+          console.info('Actual Content %c"' + value + '"', "font-weight:bold;");
+          binary_dump(view, start, cursor - start);
         }
         break;
 
@@ -383,8 +393,11 @@ Author: Eiji Kitamura (agektmr@gmail.com)
         value = view.getFloat64(cursor, endianness);
         cursor += unit;
         if (debug) {
-          console.info('Actual Content %c"'+value.toString()+'"', 'font-weight:bold;');
-          binary_dump(view, start, cursor-start);
+          console.info(
+            'Actual Content %c"' + value.toString() + '"',
+            "font-weight:bold;"
+          );
+          binary_dump(view, start, cursor - start);
         }
         break;
 
@@ -392,8 +405,11 @@ Author: Eiji Kitamura (agektmr@gmail.com)
         value = view.getUint8(cursor, endianness) === 1 ? true : false;
         cursor += unit;
         if (debug) {
-          console.info('Actual Content %c"'+value.toString()+'"', 'font-weight:bold;');
-          binary_dump(view, start, cursor-start);
+          console.info(
+            'Actual Content %c"' + value.toString() + '"',
+            "font-weight:bold;"
+          );
+          binary_dump(view, start, cursor - start);
         }
         break;
 
@@ -406,36 +422,36 @@ Author: Eiji Kitamura (agektmr@gmail.com)
       case Types.FLOAT32ARRAY:
       case Types.FLOAT64ARRAY:
       case Types.ARRAYBUFFER:
-        elem = view.buffer.slice(cursor, cursor+byte_length);
+        elem = view.buffer.slice(cursor, cursor + byte_length);
         cursor += byte_length;
 
         // If ArrayBuffer
         if (type === Types.ARRAYBUFFER) {
           value = elem;
 
-        // If other TypedArray
+          // If other TypedArray
         } else {
-          value = new root[type_name+'Array'](elem);
+          value = new root[type_name + "Array"](elem);
         }
 
         if (debug) {
-          binary_dump(view, start, cursor-start);
+          binary_dump(view, start, cursor - start);
         }
         break;
 
       case Types.BLOB:
         if (debug) {
-          binary_dump(view, start, cursor-start);
+          binary_dump(view, start, cursor - start);
         }
         // If Blob is available (on browser)
         if (root.Blob) {
-          var mime    = unpack(view, cursor);
-          var buffer  = unpack(view, mime.cursor);
+          var mime = unpack(view, cursor);
+          var buffer = unpack(view, mime.cursor);
           cursor = buffer.cursor;
-          value = new Blob([buffer.value], {type: mime.value});
+          value = new Blob([buffer.value], { type: mime.value });
         } else {
           // node.js implementation goes here
-          elem = view.buffer.slice(cursor, cursor+byte_length);
+          elem = view.buffer.slice(cursor, cursor + byte_length);
           cursor += byte_length;
           // node.js implementatino uses Buffer to help Blob
           value = new Buffer(elem);
@@ -444,7 +460,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
 
       case Types.ARRAY:
         if (debug) {
-          binary_dump(view, start, cursor-start);
+          binary_dump(view, start, cursor - start);
         }
         value = [];
         for (i = 0; i < length; i++) {
@@ -457,7 +473,7 @@ Author: Eiji Kitamura (agektmr@gmail.com)
 
       case Types.OBJECT:
         if (debug) {
-          binary_dump(view, start, cursor-start);
+          binary_dump(view, start, cursor - start);
         }
         value = {};
         for (i = 0; i < length; i++) {
@@ -470,11 +486,11 @@ Author: Eiji Kitamura (agektmr@gmail.com)
         break;
 
       default:
-        throw 'TypeError: Type not supported.';
+        throw "TypeError: Type not supported.";
     }
     return {
       value: value,
-      cursor: cursor
+      cursor: cursor,
     };
   };
 
@@ -484,11 +500,14 @@ Author: Eiji Kitamura (agektmr@gmail.com)
    * @param  {Function} callback [description]
    * @return {void} no return value
    */
-  var deferredSerialize = function(array, callback) {
-    var length = array.length, results = [], count = 0, byte_length = 0;
+  var deferredSerialize = function (array, callback) {
+    var length = array.length,
+      results = [],
+      count = 0,
+      byte_length = 0;
     for (var i = 0; i < array.length; i++) {
-      (function(index) {
-        serialize(array[index], function(result) {
+      (function (index) {
+        serialize(array[index], function (result) {
           // store results in order
           results[index] = result;
           // count byte length
@@ -512,17 +531,26 @@ Author: Eiji Kitamura (agektmr@gmail.com)
    * @param  {mixed} obj JavaScript object you want to serialize
    * @return {Array} Serialized array object
    */
-  var serialize = function(obj, callback) {
-    var subarray = [], unit = 1,
-        header_size = TYPE_LENGTH + BYTES_LENGTH,
-        type, byte_length = 0, length = 0, value = obj;
+  var serialize = function (obj, callback) {
+    var subarray = [],
+      unit = 1,
+      header_size = TYPE_LENGTH + BYTES_LENGTH,
+      type,
+      byte_length = 0,
+      length = 0,
+      value = obj;
 
+    if (typeof value === "bigint") {
+      value = value.toString(10);
+    }
     type = find_type(obj);
 
-    unit = Length[type] === undefined || Length[type] === null ? 0 :
-           root[Length[type]+'Array'].BYTES_PER_ELEMENT;
+    unit =
+      Length[type] === undefined || Length[type] === null
+        ? 0
+        : root[Length[type] + "Array"].BYTES_PER_ELEMENT;
 
-    switch(type) {
+    switch (type) {
       case Types.UNDEFINED:
       case Types.NULL:
         break;
@@ -532,8 +560,9 @@ Author: Eiji Kitamura (agektmr@gmail.com)
         byte_length = unit;
         break;
 
+      case Types.BIGINT:
       case Types.STRING:
-        length = obj.length;
+        length = value.length;
         byte_length += length * unit;
         break;
 
@@ -550,14 +579,18 @@ Author: Eiji Kitamura (agektmr@gmail.com)
         break;
 
       case Types.ARRAY:
-        deferredSerialize(obj, function(subarray, byte_length) {
-          callback([{
-            type: type,
-            length: obj.length,
-            header_size: header_size + LENGTH_LENGTH,
-            byte_length: byte_length,
-            value: null
-          }].concat(subarray));
+        deferredSerialize(obj, function (subarray, byte_length) {
+          callback(
+            [
+              {
+                type: type,
+                length: obj.length,
+                header_size: header_size + LENGTH_LENGTH,
+                byte_length: byte_length,
+                value: null,
+              },
+            ].concat(subarray)
+          );
         });
         return;
 
@@ -570,14 +603,18 @@ Author: Eiji Kitamura (agektmr@gmail.com)
             length++;
           }
         }
-        deferredSerialize(deferred, function(subarray, byte_length) {
-          callback([{
-            type: type,
-            length: length,
-            header_size: header_size + LENGTH_LENGTH,
-            byte_length: byte_length,
-            value: null
-          }].concat(subarray));
+        deferredSerialize(deferred, function (subarray, byte_length) {
+          callback(
+            [
+              {
+                type: type,
+                length: length,
+                header_size: header_size + LENGTH_LENGTH,
+                byte_length: byte_length,
+                value: null,
+              },
+            ].concat(subarray)
+          );
         });
         return;
 
@@ -588,19 +625,26 @@ Author: Eiji Kitamura (agektmr@gmail.com)
       case Types.BLOB:
         var mime_type = obj.type;
         var reader = new FileReader();
-        reader.onload = function(e) {
-          deferredSerialize([mime_type, e.target.result], function(subarray, byte_length) {
-            callback([{
-              type: type,
-              length: length,
-              header_size: header_size,
-              byte_length: byte_length,
-              value: null
-            }].concat(subarray));
-          });
+        reader.onload = function (e) {
+          deferredSerialize(
+            [mime_type, e.target.result],
+            function (subarray, byte_length) {
+              callback(
+                [
+                  {
+                    type: type,
+                    length: length,
+                    header_size: header_size,
+                    byte_length: byte_length,
+                    value: null,
+                  },
+                ].concat(subarray)
+              );
+            }
+          );
         };
-        reader.onerror = function(e) {
-          throw 'FileReader Error: '+e;
+        reader.onerror = function (e) {
+          throw "FileReader Error: " + e;
         };
         reader.readAsArrayBuffer(obj);
         return;
@@ -610,16 +654,20 @@ Author: Eiji Kitamura (agektmr@gmail.com)
         break;
 
       default:
-        throw 'TypeError: Type "'+obj.constructor.name+'" not supported.';
+        throw 'TypeError: Type "' + obj.constructor.name + '" not supported.';
     }
 
-    callback([{
-      type: type,
-      length: length,
-      header_size: header_size,
-      byte_length: byte_length,
-      value: value
-    }].concat(subarray));
+    callback(
+      [
+        {
+          type: type,
+          length: length,
+          header_size: header_size,
+          byte_length: byte_length,
+          value: value,
+        },
+      ].concat(subarray)
+    );
   };
 
   /**
@@ -627,9 +675,8 @@ Author: Eiji Kitamura (agektmr@gmail.com)
    * @param  ArrayBuffer buffer ArrayBuffer you want to deserialize
    * @return mixed              Retrieved JavaScript object
    */
-  var deserialize = function(buffer, callback) {
-    var view = new DataView(buffer);
-    var result = unpack(view, 0);
+  var deserialize = function (buffer, callback) {
+    var result = unpack(buffer, 0);
     return result.value;
   };
 
@@ -641,37 +688,48 @@ Author: Eiji Kitamura (agektmr@gmail.com)
       pack: pack,
       unpack: unpack,
       serialize: serialize,
-      deserialize: deserialize
+      deserialize: deserialize,
     };
   }
 
   var binarize = {
-    pack: function(obj, callback) {
+    pack: function (obj, callback) {
       try {
-        if (debug) console.info('%cPacking Start', 'font-weight: bold; color: red;', obj);
-        serialize(obj, function(array) {
-          if (debug) console.info('Serialized Object', array);
+        if (debug)
+          console.info(
+            "%cPacking Start",
+            "font-weight: bold; color: red;",
+            obj
+          );
+
+        serialize(obj, function (array) {
+          if (debug) console.info("Serialized Object", array);
           callback(pack(array));
         });
-      } catch(e) {
+      } catch (e) {
         throw e;
       }
     },
-    unpack: function(buffer, callback) {
+    unpack: function (buffer, callback) {
       try {
-        if (debug) console.info('%cUnpacking Start', 'font-weight: bold; color: red;', buffer);
+        if (debug)
+          console.info(
+            "%cUnpacking Start",
+            "font-weight: bold; color: red;",
+            buffer
+          );
         var result = deserialize(buffer);
-        if (debug) console.info('Deserialized Object', result);
+        if (debug) console.info("Deserialized Object", result);
         callback(result);
-      } catch(e) {
+      } catch (e) {
         throw e;
       }
-    }
+    },
   };
 
-  if (typeof module !== 'undefined' && module.exports) {
+  if (typeof module !== "undefined" && module.exports) {
     module.exports = binarize;
   } else {
     root.binarize = binarize;
   }
-})(typeof global !== 'undefined' ? global : this);
+})(typeof global !== "undefined" ? global : this ?? window);
